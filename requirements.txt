@@ -1,7 +1,10 @@
 # Normal requirement
 python-dateutil
 pandas
-python-dotenv
+sqlalchemy
+streamlit
+streamlit_datalist
+streamlit_antd_components
 
 
 

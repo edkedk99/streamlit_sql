@@ -48,9 +48,10 @@ license = {text = "MIT License"}
 dependencies = [
     "python-dateutil",
     "pandas",
-    "python-dotenv",
-
-
+    "sqlalchemy",
+    "streamlit",
+    "streamlit_datalist",
+    "streamlit_antd_components"
 ]
 
 [project.urls]
