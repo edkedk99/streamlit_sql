@@ -1,0 +1,16 @@
+#!/bin/sh
+
+staged_files=$(git diff --cached --name-only --diff-filter=ACM | grep '\.py$')
+
+if [ -n "$staged_files" ]; then
+  echo "Staged python files:"
+  echo "$staged_files"
+  echo
+  echo "$staged_files" | xargs -I {} pyright "{}"
+  echo "$staged_files" | xargs -I {} pycln "{}"
+  echo "$staged_files" | xargs -I {} isort --profile black "{}"
+  echo "$staged_files" | xargs -I {} black "{}"
+  set +x
+  # Add only the formatted changes to the staging area
+  echo "$staged_files" | xargs -I {} git add "{}"
+fi

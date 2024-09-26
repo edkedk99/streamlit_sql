@@ -1,0 +1,63 @@
+[tool.pyright]
+venvPath = "venv"
+venv = "."
+verboseOutput = false
+reportConstantRedefinition = "warning"
+reportUnnecessaryComparison = "warning"
+reportAssertAlwaysTrue = "warning"
+reportUnusedExpression = false
+include = ["streamlit_sql"]
+exclude = ["**/node_modules",
+    "**/__pycache__",
+    "build/*",
+    "dist/*"]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["streamlit_sql"]
+
+[tool.vulture]
+exclude = []
+ignore_decorators = []
+ignore_names = []
+make_whitelist = false
+min_confidence = 0
+paths = ["streamlit_sql"]
+sort_by_size = true
+verbose = false
+
+[tool.isort]
+profile = "black"
+
+[metadata]
+description = "Streamlit SQL"
+keyword = []
+classifiers = [""]
+author = "Anonymous"
+author_email = ""
+
+[project]
+name = "streamlit_sql"
+version = "0.1.0"
+# readme= "docs/README.md"
+requires-python = ">=3.8"
+license = {text = "MIT License"}
+dependencies = [
+    "python-dateutil",
+    "pandas",
+    "python-dotenv",
+
+
+]
+
+[project.urls]
+# homepage = "https://github.com/edkedk99/hledger-args"
+# documentation = "https://edkedk99.github.io/hledger-args/"
+# repository = "https://github.com/edkedk99/hledger-args"
+# changelog = ""
+
+[project.scripts]
+phlc = "streamlit_sql.__main__:main"

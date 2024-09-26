@@ -1,0 +1,13 @@
+setuptools
+ipython
+ipdb
+build
+rich
+isort
+black
+build
+vermin
+pandas-stubs
+vulture
+pdbpp
+pycln
