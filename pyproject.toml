@@ -51,7 +51,8 @@ dependencies = [
     "sqlalchemy",
     "streamlit",
     "streamlit_datalist",
-    "streamlit_antd_components"
+    "streamlit_antd_components",
+    "streamlit_sql @ git+http://192.168.15.100:7020/code/streamlit_sql"
 ]
 
 [project.urls]
