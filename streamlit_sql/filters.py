@@ -85,7 +85,7 @@ def get_str_opts(_session: Session, Model):
     options: dict[str, list] = {
         column.description: get_options_column(_session, column)
         for column in columns
-        if column.type.python_type == str
+        if column.type.python_type is str
     }
 
     return options
@@ -157,14 +157,14 @@ def get_filters(
             value_filter = value.idx if value else None
 
             new_stmt = add_not_all(new_stmt, col, value_filter)
-        elif col.type.python_type == str:
+        elif col.type.python_type is str:
             opts = filter_opts.text[col_name]
             value = st.sidebar.selectbox(col_name, options=opts)
             new_stmt = add_not_all(new_stmt, col, value)
-        elif col.type.python_type == int:
+        elif col.type.python_type is int:
             value = st.sidebar.number_input(col_name, step=1, value=None)
             new_stmt = add_not_all(new_stmt, col, value)
-        elif col.type.python_type == float:
+        elif col.type.python_type is float:
             value = st.sidebar.number_input(col_name, step=0.1, value=None)
             new_stmt = add_not_all(new_stmt, col, value)
         elif col.type.python_type == date:

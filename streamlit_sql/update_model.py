@@ -56,7 +56,7 @@ def get_opts(_conn: SQLConnection, _Model, table_name: str):
         for col in cols:
             if len(col.foreign_keys) > 0:
                 opts[col.description] = get_fk_opts(col, _Model, s)
-            elif col.type.python_type == str:
+            elif col.type.python_type is str:
                 opts[col.description] = get_str_opts(col, s)
 
     return opts
@@ -104,16 +104,16 @@ def get_input_value(
     elif len(col.foreign_keys) > 0:
         opts = columns_opts[col_name]
         input_value = input_fk(pretty_name, col_value, opts, key)
-    elif col.type.python_type == str:
+    elif col.type.python_type is str:
         opts = columns_opts[col_name]
         input_value = input_str(col_name, opts, key, col_value)
-    elif col.type.python_type == int:
+    elif col.type.python_type is int:
         input_value = st.number_input(pretty_name, value=col_value, step=1, key=key)
-    elif col.type.python_type == float:
+    elif col.type.python_type is float:
         input_value = st.number_input(pretty_name, value=col_value, step=0.1, key=key)
-    elif col.type.python_type == date:
+    elif col.type.python_type is date:
         input_value = st.date_input(pretty_name, value=col_value, key=key)
-    elif col.type.python_type == bool:
+    elif col.type.python_type is bool:
         input_value = st.checkbox(pretty_name, value=col_value, key=key)
     else:
         input_value = None
@@ -203,7 +203,7 @@ def show_create(
         for col in columns:
             col_name = col.description
             if not col.primary_key:
-                col_value = default_values.get(col_name, None)
+                col_value = default_values.get(col_name)
                 input_value = get_input_value(
                     col, col_value, columns_opts, "create_model_key"
                 )

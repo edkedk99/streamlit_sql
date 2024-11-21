@@ -32,6 +32,17 @@ verbose = false
 [tool.isort]
 profile = "black"
 
+[tool.ruff]
+exclude = [".venv", "whitelist.py", "alembic", "alembic_dev"]
+line-length = 88
+
+[tool.ruff.lint]
+ignore = ["SIM108", "E501",]
+select = ["UP","YTT", "A", "EM", "ICN","I", "SIM", "E", "F401"]
+
+
+
+
 [metadata]
 description = "Streamlit SQL"
 keyword = []
