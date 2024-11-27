@@ -1,148 +1,167 @@
+from functools import cached_property
 from typing import Any
 
 import pandas as pd
-from sqlalchemy import func, select
-from sqlalchemy.orm import InstrumentedAttribute, selectinload
+from sqlalchemy import Row, func, select
+from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute, selectinload
 from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
-from sqlalchemy.sql.schema import Column, ForeignKey
-from sqlalchemy.sql.selectable import Select
 from streamlit.connections.sql_connection import SQLConnection
 
 from streamlit_sql import filters
 
 
-def get_model_by_name(base_model, name: str):
-    registry = base_model.registry._class_registry
-    models_reg = [
-        model for model in registry.values() if hasattr(model, "__tablename__")
-    ]
-    model_reg = next(model for model in models_reg if model.__tablename__ == name)
-    return model_reg
-
-
-def get_base_select(
-    Model,
-    filter_by: list[tuple[InstrumentedAttribute, Any]],
-    joins_filter_by: list[DeclarativeAttributeIntercept],
-):
-    stmt = select(Model)
-    if len(filter_by) == 0:
-        return stmt
-
-    for join_model in joins_filter_by:
-        stmt = stmt.join(join_model)
-
-    for col, value in filter_by:
-        stmt = stmt.where(col == value)
-
-    return stmt
-
-
-def get_initial_balance(
-    conn: SQLConnection, base_query: Select, page: int, limit: int, rolling_colname: str
-):
-    if page == 1:
-        offset = 0
-    else:
-        offset = (page - 1) * limit
-
-    stmt_get_data = base_query.limit(offset).subquery()
-
-    rolling_column: Column = getattr(stmt_get_data.c, rolling_colname)
-    stmt = select(func.sum(rolling_column))
-
-    with conn.session as s:
-        total = s.execute(stmt).scalar() or 0
-
-    total_int = int(total)
-    return total_int
-
-
-def get_rolling_df(rolling_total_column: str, df: pd.DataFrame, prev_bal: float):
-    label = f"sum_{rolling_total_column}"
-    df[label] = df[rolling_total_column].cumsum() + prev_bal
-    return df
-
-
-class ReadSQL:
+class ReadStmt:
     def __init__(
         self,
-        _conn: SQLConnection,
-        Model,
-        sum_columns: list[str] | None = None,
-        rolling_total_column: str | None = None,
+        conn: SQLConnection,
+        Model: type[DeclarativeBase],
         order_by: str = "id",
         filter_by: list[tuple[InstrumentedAttribute, Any]] = list(),
         joins_filter_by: list[DeclarativeAttributeIntercept] = list(),
     ) -> None:
-        self.conn = _conn
+        self.conn = conn
         self.Model = Model
-        self.sum_columns = sum_columns
-        self.rolling_total_column = rolling_total_column
         self.order_by = order_by
         self.filter_by = filter_by
         self.joins_filter_by = joins_filter_by
 
-        columns: list[Column] = self.Model.__table__.columns.values()
-        self.pk_col: Column = next(col for col in columns if col.primary_key)
+        self.stmt_no_pag = select(Model)
+        self._add_joins()
+        self._add_filters()
+        self._add_sidebar_filters()
+        self._add_order_by()
+        self._add_load_relationships()
 
-        self.filter_opts = filters.get_filter_opts(_conn, Model)
-        self.base_query = self.get_base_query()
+        columns = self.Model.__table__.columns.values()
+        self.rels_list = list(self.Model.__mapper__.relationships)
 
-    def get_base_query(self):
-        stmt = get_base_select(self.Model, self.filter_by, self.joins_filter_by)
+    def _add_joins(self):
+        for join_model in self.joins_filter_by:
+            self.stmt_no_pag = self.stmt_no_pag.join(join_model)
 
-        model_name: str = self.Model.__tablename__
+    def _add_filters(self):
+        for col, value in self.filter_by:
+            self.stmt_no_pag = self.stmt_no_pag.where(col == value)
 
-        cols_name = [
-            item[0].name for item in self.filter_by if item[0].table.name == model_name
-        ]
-        stmt = filters.get_filters(self.Model, stmt, cols_name, self.filter_opts)
+    def _add_order_by(self):
+        col = self.Model.__table__.columns.get(self.order_by)
+        self.stmt_no_pag = self.stmt_no_pag.order_by(col)
 
-        order_column = getattr(self.Model, self.order_by)
-        stmt = stmt.order_by(order_column, self.pk_col)
-        return stmt
-
-    def get_rel_fk(self, rels_list, fk: ForeignKey):
-        fk_table_name = fk.column.table.description
-        rel = next(
-            relation for relation in rels_list if relation.target.name == fk_table_name
-        )
-        return rel
-
-    def query_data(self, limit: int, page: int):
-        fks: set[ForeignKey] = self.Model.__table__.foreign_keys
-
-        rels_list = list(self.Model.__mapper__.relationships)
-        rels_fk = [self.get_rel_fk(rels_list, fk) for fk in fks]
-
-        offset = (page - 1) * limit
-        stmt = self.base_query.offset(offset).limit(limit)
-        if len(rels_fk) > 0:
-            stmt = stmt.options(selectinload(*rels_fk))
-
-        cols = self.Model.__table__.columns.keys()
-        rows_data: list[dict] = list()
+    def _add_sidebar_filters(self):
         with self.conn.session as s:
-            rows = s.execute(stmt)
-            for row in rows:
-                col_data = {col: getattr(row[0], col) for col in cols}
-                rel_data = {rel: str(getattr(row[0], rel.key)) for rel in rels_fk}
+            existing = filters.ExistingData(s, self.Model)
+            sidebar_filters = filters.Filter(self.Model, existing, self.filter_by)
 
-                row_data = {**col_data, **rel_data}
-                rows_data.append(row_data)
+        filters_dict = sidebar_filters.filters
 
-        df = pd.DataFrame(rows_data)
-        return df
+        for col_name, value in filters_dict.items():
+            col = self.Model.__table__.columns.get(col_name)
+            self.stmt_no_pag = self.stmt_no_pag.where(col == value)
 
-    def get_data(self, limit: int, page: int):
-        df = self.query_data(limit, page)
+    def _add_load_relationships(self):
+        rels_list = list(self.Model.__mapper__.relationships)
+
+        self.stmt_no_pag = self.stmt_no_pag.options(
+            selectinload(*rels_list)  # pyright: ignore
+        )
+
+    @cached_property
+    def qtty_rows(self):
+        stmt_no_pag = select(func.count()).select_from(self.stmt_no_pag.subquery())
+        with self.conn.session as s:
+            qtty = s.execute(stmt_no_pag).scalar_one()
+
+        return qtty
+
+
+class ReadData:
+    def __init__(
+        self,
+        read_stmt: ReadStmt,
+        rolling_total_column: str | None = None,
+        limit: int = 50,
+        page: int = 1,
+    ) -> None:
+        self.read_stmt = read_stmt
+        self.rolling_total_column = rolling_total_column
+        self.limit = limit
+        self.page = page
+
+        self._cols_name = [
+            col.description
+            for col in read_stmt.Model.__table__.columns
+            if col.description
+        ]
+
+    @property
+    def stmt_pag(
+        self,
+        limit: int = 50,
+        page: int = 1,
+    ):
+        offset = (self.page - 1) * self.limit
+        result = self.read_stmt.stmt_no_pag.offset(offset).limit(self.limit)
+        return result
+
+    def _initial_balance(self):
+        if not self.rolling_total_column:
+            return None
+
+        if self.page == 1:
+            offset = 0
+        else:
+            offset = (self.page - 1) * self.limit
+
+        rolling_column = self.read_stmt.Model.__table__.columns.get(
+            self.rolling_total_column
+        )
+        if rolling_column is None:
+            return None
+
+        stmt_no_pag = select(func.sum(rolling_column))
+        with self.read_stmt.conn.session as s:
+            total = s.execute(stmt_no_pag).scalar() or 0
+
+        total = float(total)
+        return float
+
+    @cached_property
+    def rels(self):
+        fks = [
+            list(col.foreign_keys)[0]
+            for col in self.read_stmt.Model.__table__.columns
+            if len(col.foreign_keys) > 0
+        ]
+
+        result = [
+            rel
+            for rel in self.read_stmt.rels_list
+            for fk in fks
+            if fk.get_referent(rel.target) is not None
+        ]
+        return result
+
+    def _get_row(self, row: Row[tuple[DeclarativeBase]]):
+        col_data = {col: getattr(row[0], col) for col in self._cols_name}
+        rel_obj = {rel.key: getattr(row[0], rel.key) for rel in self.rels}
+
+        rel_data = {name: str(rel) for name, rel in rel_obj.items()}
+
+        row_data = {**col_data, **rel_data}
+        return row_data
+
+    @property
+    def data(self):
+        with self.read_stmt.conn.session as s:
+            rows = s.execute(self.stmt_pag)
+            rows_dict = [self._get_row(row) for row in rows]
+
+        df = pd.DataFrame(rows_dict)
         if df.empty:
             return df
 
         if self.rolling_total_column:
-            prev_total = get_initial_balance(
-                self.conn, self.base_query, page, limit, self.rolling_total_column
-            )
-            df = get_rolling_df(self.rolling_total_column, df, prev_total)
+            label = f"sum_{self.rolling_total_column}"
+            df[label] = df[self.rolling_total_column].cumsum() + self._initial_balance
+
         return df
