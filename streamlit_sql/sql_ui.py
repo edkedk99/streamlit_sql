@@ -156,13 +156,13 @@ def show_many(conn: SQLConnection, model_opts: list[ModelOpts]):
         format_func=lambda model_opts: get_pretty_name(model_opts.Model.__tablename__),
     )
     st.query_params.tablename = model_opts_selected.Model.__tablename__
-
-    ShowPage(conn, model_opts_selected)
+    return model_opts_selected
 
 
 def show_page(conn: SQLConnection, model_opts: ModelOpts | list[ModelOpts]):
     if isinstance(model_opts, ModelOpts):
-        ShowPage(conn, model_opts)
+        opt = model_opts
     else:
-        set_state("last_model_index", 0)
-        model_index: int = ss.last_model_index
+        opt = show_many(conn, model_opts)
+
+    ShowPage(conn, opt)

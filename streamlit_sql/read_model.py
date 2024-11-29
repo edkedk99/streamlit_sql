@@ -1,6 +1,6 @@
 from functools import cached_property
 from typing import Any
-
+from datetime import date, datetime
 import pandas as pd
 import streamlit as st
 from sqlalchemy import Row, func, select
@@ -27,7 +27,6 @@ class ReadStmt:
         self.filter_by = filter_by
         self.joins_filter_by = joins_filter_by
         self.available_sidebar_filter = available_sidebar_filter
-
         self.stmt_no_pag = select(Model)
         self._add_joins()
         self._add_filters()
@@ -37,6 +36,8 @@ class ReadStmt:
 
         columns = self.Model.__table__.columns.values()
         self.rels_list = list(self.Model.__mapper__.relationships)
+
+        self.qtty_rows = self.get_qtty_rows()
 
     def _add_joins(self):
         for join_model in self.joins_filter_by:
@@ -54,18 +55,27 @@ class ReadStmt:
         with self.conn.session as s:
             table_name = self.Model.__tablename__
             existing = filters.ExistingData(s, self.Model, table_name)
-            sidebar_filters = filters.SidebarFilter(
-                self.Model,
-                existing,
-                self.filter_by,
-                self.available_sidebar_filter,
-            )
+
+        sidebar_filters = filters.SidebarFilter(
+            self.Model,
+            existing,
+            self.filter_by,
+            self.available_sidebar_filter,
+        )
 
         filters_dict = sidebar_filters.filters
 
         for col_name, value in filters_dict.items():
             col = self.Model.__table__.columns.get(col_name)
-            self.stmt_no_pag = self.stmt_no_pag.where(col == value)
+            assert col is not None
+
+            col_type = col.type.python_type
+            is_datetime = col_type is date or col_type is datetime
+            is_value_tuple = isinstance(value, tuple)
+            if is_datetime and is_value_tuple:
+                self.stmt_no_pag.where(col >= value[0], col <= value[1])
+            else:
+                self.stmt_no_pag = self.stmt_no_pag.where(col == value)
 
     def _add_load_relationships(self):
         rels_list = list(self.Model.__mapper__.relationships)
@@ -74,8 +84,7 @@ class ReadStmt:
             selectinload(*rels_list)  # pyright: ignore
         )
 
-    @cached_property
-    def qtty_rows(self):
+    def get_qtty_rows(self):
         stmt_no_pag = select(func.count()).select_from(self.stmt_no_pag.subquery())
         with self.conn.session as s:
             qtty = s.execute(stmt_no_pag).scalar_one()

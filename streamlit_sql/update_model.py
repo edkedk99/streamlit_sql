@@ -5,6 +5,7 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
 from streamlit.connections.sql_connection import SQLConnection
+from sqlalchemy import update
 from streamlit.delta_generator import DeltaGenerator
 from streamlit_datalist import stDatalist
 
@@ -120,11 +121,16 @@ class UpdateRow:
         return updated
 
     def save(self, updated: dict):
-        row = self.Model(**updated)
         with self.conn.session as s:
             try:
-                s.merge(row)
+                stmt = (
+                    update(self.Model)
+                    .where(self.Model.__table__.columns.id == updated["id"])
+                    .values(**updated)
+                )
+                s.execute(stmt)
                 s.commit()
+                st.cache_data.clear()
                 return True, "Atualizado com sucesso"
             except Exception as e:
                 return False, str(e)
@@ -135,6 +141,7 @@ class UpdateRow:
             try:
                 s.delete(row)
                 s.commit()
+                st.cache_data.clear()
                 return True, "Removido com Sucesso"
             except Exception as e:
                 s.rollback()
@@ -212,6 +219,7 @@ class CreateRow:
             with self.conn.session as s:
                 s.add(row)
                 s.commit()
+                st.cache_data.clear()
                 st.balloons()
 
     def show_dialog(self):
