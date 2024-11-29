@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from datetime import date
-from functools import cached_property
 from typing import Any, Sequence, Type
 
 import streamlit as st
@@ -21,14 +20,20 @@ class FkOpt:
 
 
 class ExistingData:
-    def __init__(self, session: Session, Model: Type[DeclarativeBase]) -> None:
-        self.session = session
-        self.Model = Model
+    def __init__(
+        _self, _session: Session, _Model: Type[DeclarativeBase], table_name: str
+    ) -> None:
+        _self.session = _session
+        _self.Model = _Model
 
-        self.cols = Model.__table__.columns
+        _self.cols = _Model.__table__.columns
+        reg_values: Any = _Model.registry._class_registry.values()
+        _self._models = [reg for reg in reg_values if hasattr(reg, "__tablename__")]
 
-        reg_values: Any = Model.registry._class_registry.values()
-        self._models = [reg for reg in reg_values if hasattr(reg, "__tablename__")]
+        table_name = _Model.__tablename__
+        _self.text = _self.get_text(table_name)
+        _self.dt = _self.get_dt(table_name)
+        _self.fk = _self.get_fk(table_name)
 
     def _get_str_opts(self, column) -> Sequence[str]:
         col_name = column.name
@@ -36,11 +41,11 @@ class ExistingData:
         opts = self.session.execute(stmt).scalars().all()
         return opts
 
-    @cached_property
-    def text(self) -> dict[str, Sequence[str]]:
+    @st.cache_data
+    def get_text(_self, table_name: str) -> dict[str, Sequence[str]]:
         opts = {
-            col.name: self._get_str_opts(col)
-            for col in self.cols
+            col.name: _self._get_str_opts(col)
+            for col in _self.cols
             if col.type.python_type is str
         }
         return opts
@@ -51,11 +56,11 @@ class ExistingData:
         max_dt: date = self.session.query(func.max(column)).scalar() or date.today()
         return min_dt, max_dt
 
-    @cached_property
-    def dt(self) -> dict[str, tuple[date, date]]:
+    @st.cache_data
+    def get_dt(_self, table_name: str) -> dict[str, tuple[date, date]]:
         opts = {
-            col.name: self._get_dt_col(col)
-            for col in self.cols
+            col.name: _self._get_dt_col(col)
+            for col in _self.cols
             if col.type.python_type is date
         }
         return opts
@@ -76,32 +81,34 @@ class ExistingData:
         opts = [self.get_foreign_opt(row, fk_pk_name) for row in rows]
         return opts
 
-    @cached_property
-    def fk(self):
-        fk_cols = [col for col in self.cols if len(list(col.foreign_keys)) > 0]
+    @st.cache_data
+    def get_fk(_self, table_name: str):
+        fk_cols = [col for col in _self.cols if len(list(col.foreign_keys)) > 0]
         opts = {
-            col.description: self.get_foreign_opts(list(col.foreign_keys)[0])
+            col.description: _self.get_foreign_opts(list(col.foreign_keys)[0])
             for col in fk_cols
             if col.description
         }
         return opts
 
 
-class Filter:
+class SidebarFilter:
     def __init__(
         self,
         Model: type[DeclarativeBase],
         existing_data: ExistingData,
         filter_by: list[tuple[InstrumentedAttribute, Any]] = [],
+        available_sidebar_filter: list[str] | None = None,
     ) -> None:
         self.Model = Model
         self.opts = existing_data
         self.filter_by = filter_by
+        self.available_sidebar_filter = available_sidebar_filter
 
         self.table_name = Model.__tablename__
         self.rels_list = list(self.Model.__mapper__.relationships)
 
-    @cached_property
+    @property
     def cols(self):
         filter_cols: list[str] = [
             col.name for col, _ in self.filter_by if col.table.name == self.table_name
@@ -113,6 +120,12 @@ class Filter:
             for col in all_cols
             if col.name not in filter_cols and not col.primary_key
         ]
+
+        if self.available_sidebar_filter:
+            result = [
+                col for col in result if col.name in self.available_sidebar_filter
+            ]
+
         return result
 
     def _date_filter(self, label: str, min_value: date, max_value: date):

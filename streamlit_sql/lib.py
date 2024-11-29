@@ -1,3 +1,4 @@
+import streamlit as st
 from streamlit import session_state as ss
 from streamlit.elements.arrow import DataframeState
 
@@ -21,6 +22,7 @@ def get_row_index(state: DataframeState | None):
         return result
 
 
+@st.cache_data
 def get_pretty_name(name: str):
     pretty_name = " ".join(name.split("_")).title()
     return pretty_name

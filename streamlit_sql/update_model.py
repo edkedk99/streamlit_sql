@@ -27,7 +27,8 @@ class InputFields:
         self.Model = Model
         self.key_prefix = key_prefix
 
-        self.existing_data = ExistingData(session, Model)
+        table_name = self.Model.__tablename__
+        self.existing_data = ExistingData(session, Model, table_name)
 
     def input_fk(self, col_name: str, value: int | None):
         key = f"{self.key_prefix}_{col_name}"
@@ -43,7 +44,7 @@ class InputFields:
         )
         if not input_value:
             return
-        return input_value.name
+        return input_value.idx
 
     def input_str(self, col_name: str, value=None):
         key = f"{self.key_prefix}_{col_name}"
@@ -100,8 +101,6 @@ class UpdateRow:
             self.row = s.get_one(Model, row_id)
             self.input_fields = InputFields(s, Model, "update")
 
-        self.show()
-
     def get_updates(self):
         cols = self.Model.__table__.columns
         updated = dict()
@@ -124,7 +123,7 @@ class UpdateRow:
         row = self.Model(**updated)
         with self.conn.session as s:
             try:
-                s.add(row)
+                s.merge(row)
                 s.commit()
                 return True, "Atualizado com sucesso"
             except Exception as e:
@@ -201,8 +200,7 @@ class CreateRow:
 
         return created
 
-    def show(self):
-        pretty_name = get_pretty_name(self.Model.__tablename__)
+    def show(self, pretty_name: str):
         st.subheader(pretty_name)
 
         with st.form(f"create_model_form_{pretty_name}", border=False):
@@ -221,6 +219,6 @@ class CreateRow:
 
         @st.dialog(f"Edit {pretty_name}", width="large")  # pyright: ignore
         def wrap_show_update():
-            self.show()
+            self.show(pretty_name)
 
         wrap_show_update()

@@ -2,6 +2,7 @@ from functools import cached_property
 from typing import Any
 
 import pandas as pd
+import streamlit as st
 from sqlalchemy import Row, func, select
 from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute, selectinload
 from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
@@ -18,12 +19,14 @@ class ReadStmt:
         order_by: str = "id",
         filter_by: list[tuple[InstrumentedAttribute, Any]] = list(),
         joins_filter_by: list[DeclarativeAttributeIntercept] = list(),
+        available_sidebar_filter: list[str] | None = None,
     ) -> None:
         self.conn = conn
         self.Model = Model
         self.order_by = order_by
         self.filter_by = filter_by
         self.joins_filter_by = joins_filter_by
+        self.available_sidebar_filter = available_sidebar_filter
 
         self.stmt_no_pag = select(Model)
         self._add_joins()
@@ -49,8 +52,14 @@ class ReadStmt:
 
     def _add_sidebar_filters(self):
         with self.conn.session as s:
-            existing = filters.ExistingData(s, self.Model)
-            sidebar_filters = filters.Filter(self.Model, existing, self.filter_by)
+            table_name = self.Model.__tablename__
+            existing = filters.ExistingData(s, self.Model, table_name)
+            sidebar_filters = filters.SidebarFilter(
+                self.Model,
+                existing,
+                self.filter_by,
+                self.available_sidebar_filter,
+            )
 
         filters_dict = sidebar_filters.filters
 
@@ -76,31 +85,32 @@ class ReadStmt:
 
 class ReadData:
     def __init__(
-        self,
-        read_stmt: ReadStmt,
-        rolling_total_column: str | None = None,
+        _self,
+        _read_stmt: ReadStmt,
+        _rolling_total_column: str | None = None,
         limit: int = 50,
         page: int = 1,
     ) -> None:
-        self.read_stmt = read_stmt
-        self.rolling_total_column = rolling_total_column
-        self.limit = limit
-        self.page = page
+        _self.read_stmt = _read_stmt
+        _self.rolling_total_column = _rolling_total_column
+        _self.limit = limit
+        _self.page = page
 
-        self._cols_name = [
+        _self._cols_name = [
             col.description
-            for col in read_stmt.Model.__table__.columns
+            for col in _read_stmt.Model.__table__.columns
             if col.description
         ]
 
-    @property
-    def stmt_pag(
-        self,
-        limit: int = 50,
-        page: int = 1,
+        _self.stmt_pag = _self.get_stmt_pag()
+        stmt_params = dict(_self.stmt_pag.compile().params)
+        _self.data = _self.get_data(str(_self.stmt_pag), stmt_params)
+
+    def get_stmt_pag(
+        _self,
     ):
-        offset = (self.page - 1) * self.limit
-        result = self.read_stmt.stmt_no_pag.offset(offset).limit(self.limit)
+        offset = (_self.page - 1) * _self.limit
+        result = _self.read_stmt.stmt_no_pag.offset(offset).limit(_self.limit)
         return result
 
     def _initial_balance(self):
@@ -150,18 +160,18 @@ class ReadData:
         row_data = {**col_data, **rel_data}
         return row_data
 
-    @property
-    def data(self):
-        with self.read_stmt.conn.session as s:
-            rows = s.execute(self.stmt_pag)
-            rows_dict = [self._get_row(row) for row in rows]
+    @st.cache_data
+    def get_data(_self, stmt_pag_str: str, stmt_params: dict):
+        with _self.read_stmt.conn.session as s:
+            rows = s.execute(_self.stmt_pag)
+            rows_dict = [_self._get_row(row) for row in rows]
 
         df = pd.DataFrame(rows_dict)
         if df.empty:
             return df
 
-        if self.rolling_total_column:
-            label = f"sum_{self.rolling_total_column}"
-            df[label] = df[self.rolling_total_column].cumsum() + self._initial_balance
+        if _self.rolling_total_column:
+            label = f"sum_{_self.rolling_total_column}"
+            df[label] = df[_self.rolling_total_column].cumsum() + _self._initial_balance
 
         return df

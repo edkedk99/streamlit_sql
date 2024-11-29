@@ -8,7 +8,8 @@ from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 from streamlit.connections.sql_connection import SQLConnection
 
 from streamlit_sql import read_model, update_model
-from streamlit_sql.lib import get_pretty_name, get_row_index
+from streamlit_sql.lib import get_pretty_name, get_row_index, set_state
+from streamlit import session_state as ss
 
 
 @dataclass
@@ -21,6 +22,7 @@ class ModelOpts:
     columns: list[str] | None = None
     edit_create_default_values: dict = field(default_factory=dict)
     read_use_container_width: bool = False
+    available_sidebar_filter: list[str] | None = None
 
 
 class ShowPage:
@@ -37,6 +39,7 @@ class ShowPage:
             model_opts.order_by,
             model_opts.filter_by,
             model_opts.joins_filter_by,
+            model_opts.available_sidebar_filter,
         )
 
         self.header_container = st.container()
@@ -44,7 +47,9 @@ class ShowPage:
         self.pag_container = st.container()
 
         self.add_header()
-        self.items_per_page, self.page = self.add_pagination()
+        self.items_per_page, self.page = self.add_pagination(
+            str(self.read_stmt.stmt_no_pag)
+        )
         self.current_data = self.add_data()
 
     def add_header(self):
@@ -63,18 +68,18 @@ class ShowPage:
         with col_title:
             st.subheader(self.pretty_name)
 
-    def add_pagination(self):
-        pag_col1, pag_col2 = self.pag_container.columns([0.2, 0.8])
+    def add_pagination(_self, stmt_no_pag_str: str):
+        pag_col1, pag_col2 = _self.pag_container.columns([0.2, 0.8])
 
-        count = self.read_stmt.qtty_rows
-        first_item_candidates = [item for item in self.OPTS_ITEMS_PAGE if item > count]
+        count = _self.read_stmt.qtty_rows
+        first_item_candidates = [item for item in _self.OPTS_ITEMS_PAGE if item > count]
         last_item = (
             first_item_candidates[0]
-            if self.OPTS_ITEMS_PAGE[-1] > count
-            else self.OPTS_ITEMS_PAGE[-1]
+            if _self.OPTS_ITEMS_PAGE[-1] > count
+            else _self.OPTS_ITEMS_PAGE[-1]
         )
         items_page_str = [
-            str(item) for item in self.OPTS_ITEMS_PAGE if item <= last_item
+            str(item) for item in _self.OPTS_ITEMS_PAGE if item <= last_item
         ]
 
         with pag_col1:
@@ -130,3 +135,34 @@ class ShowPage:
                 self.model_opts.edit_create_default_values,
             )
             update_row.show_dialog()
+
+
+def show_many(conn: SQLConnection, model_opts: list[ModelOpts]):
+    if "tablename" not in st.query_params:
+        first_model = model_opts[0]
+        st.query_params.tablename = first_model.Model.__tablename__
+
+    tablename: str = st.query_params.tablename
+    tables_name = [opt.Model.__tablename__ for opt in model_opts]
+    if tablename in tables_name:
+        model_index = tables_name.index(tablename)
+    else:
+        model_index = 0
+
+    model_opts_selected = st.selectbox(
+        "Table",
+        options=model_opts,
+        index=model_index,
+        format_func=lambda model_opts: get_pretty_name(model_opts.Model.__tablename__),
+    )
+    st.query_params.tablename = model_opts_selected.Model.__tablename__
+
+    ShowPage(conn, model_opts_selected)
+
+
+def show_page(conn: SQLConnection, model_opts: ModelOpts | list[ModelOpts]):
+    if isinstance(model_opts, ModelOpts):
+        ShowPage(conn, model_opts)
+    else:
+        set_state("last_model_index", 0)
+        model_index: int = ss.last_model_index
