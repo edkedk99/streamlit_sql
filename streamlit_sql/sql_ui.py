@@ -8,8 +8,7 @@ from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 from streamlit.connections.sql_connection import SQLConnection
 
 from streamlit_sql import read_model, update_model
-from streamlit_sql.lib import get_pretty_name, get_row_index, set_state
-from streamlit import session_state as ss
+from streamlit_sql.lib import get_pretty_name, get_row_index
 
 
 @dataclass
@@ -50,7 +49,7 @@ class ShowPage:
         self.items_per_page, self.page = self.add_pagination(
             str(self.read_stmt.stmt_no_pag)
         )
-        self.current_data = self.add_data()
+        self.data = self.add_data()
 
     def add_header(self):
         col_btn, col_title = self.header_container.columns(2)
@@ -111,7 +110,7 @@ class ShowPage:
         data = read_data.data
         if data.empty:
             st.header(":red[Tabela Vazia]")
-            return (None, None)
+            return data
 
         data.columns = data.columns.astype("str")
         selection_state = self.data_container.dataframe(
@@ -135,6 +134,8 @@ class ShowPage:
                 self.model_opts.edit_create_default_values,
             )
             update_row.show_dialog()
+
+        return data
 
 
 def show_many(conn: SQLConnection, model_opts: list[ModelOpts]):
@@ -165,4 +166,5 @@ def show_page(conn: SQLConnection, model_opts: ModelOpts | list[ModelOpts]):
     else:
         opt = show_many(conn, model_opts)
 
-    ShowPage(conn, opt)
+    page = ShowPage(conn, opt)
+    return page.data

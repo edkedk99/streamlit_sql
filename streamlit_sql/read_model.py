@@ -1,6 +1,7 @@
+from datetime import date, datetime
 from functools import cached_property
 from typing import Any
-from datetime import date, datetime
+
 import pandas as pd
 import streamlit as st
 from sqlalchemy import Row, func, select

@@ -148,18 +148,6 @@ class SidebarFilter:
         )
         return (inicio, final)
 
-    def get_fk_rel_name(self, col: KeyedColumnElement):
-        fks = list(col.foreign_keys)
-        if len(fks) == 0:
-            return col.description or "Unknown"
-
-        fk = fks[0]
-        referents = [fk.get_referent(rel.target) for rel in self.rels_list]
-
-        rel_name = next(ref.table.name for ref in referents if ref is not None)
-        rel_name = get_pretty_name(rel_name)
-        return rel_name
-
     def filter_col(self, col: KeyedColumnElement):
         col_name = col.description
         assert col_name is not None
@@ -168,8 +156,9 @@ class SidebarFilter:
         col_type = col.type.python_type
         if is_fk:
             opts = self.opts.fk[col_name]
+            rel_name = col_label.removesuffix(" Id")
             value = st.sidebar.selectbox(
-                self.get_fk_rel_name(col),
+                rel_name,
                 options=opts,
                 format_func=lambda opt: opt.name,
                 index=None,

@@ -1,11 +1,11 @@
 from datetime import date
 
 import streamlit as st
+from sqlalchemy import update
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
 from streamlit.connections.sql_connection import SQLConnection
-from sqlalchemy import update
 from streamlit.delta_generator import DeltaGenerator
 from streamlit_datalist import stDatalist
 
