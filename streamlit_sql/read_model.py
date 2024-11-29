@@ -122,6 +122,7 @@ class ReadData:
         result = _self.read_stmt.stmt_no_pag.offset(offset).limit(_self.limit)
         return result
 
+    @property
     def _initial_balance(self):
         if not self.rolling_total_column:
             return None
@@ -142,7 +143,7 @@ class ReadData:
             total = s.execute(stmt_no_pag).scalar() or 0
 
         total = float(total)
-        return float
+        return total
 
     @cached_property
     def rels(self):
