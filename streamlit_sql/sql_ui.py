@@ -22,7 +22,7 @@ class ModelOpts:
     Args:
         Model (type[DeclarativeBase]): The sqlalchemy Model to display
         rolling_total_column (str, optional): A numeric column name of the Model. A new column will be displayed with the rolling sum of these column
-        filter_by (list[tuple[InstrumentedAttribute, Any]], optional): A list of tuple of the pair column and value. It will filter the rows to display as a st.dataframe. It add to the select statement WHERE condition like select(Model).where(COLUMN == VALUE). If the column if from a relationship table, add that Sqlalchemy Model to joins_filter_by arg.
+        filter_by (list[tuple[InstrumentedAttribute, Any]], optional): A list of tuple of the pair column and value. It will filter the rows to display before presenting to the user by adding to the select statement WHERE condition like *select(Model).where(COLUMN == VALUE)*. If the column comes from a relationship table, add that Sqlalchemy Model to joins_filter_by arg.
         joins_filter_by (list[DeclarativeAttributeIntercept], optional): List of Models that needs to join if added a relationship column in filter_by arg.
         columns (list[str], optional): Select which columns of the Model to display. Defaults to all columns
         edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object
@@ -30,17 +30,18 @@ class ModelOpts:
         available_sidebar_filter (list[str], optional): Define wich columns the user will be able to filter in the sidebar. Defaults to all
 
     Examples:
-
-    sales_manager_col = Model.__table__.columns.get(\"name\")
-    model_opts = ModelOpts(Model=Invoice,
-                           rolling_total_column=\"amount\",
-                           filter_by=[(sales_manager_col, \"John\")]),
-                           joins_filter_by=[SalesManager],
-                           columns=[\"date\", \"amount\", SalesManager.__tablename__],
-                           edit_create_default_values=dict(department_id=52),
-                           read_use_container_width=True,
-                           available_sidebar_filter=[\"date\", SalesManager.__tablename__]
-    )
+        ```python
+        sales_manager_col = Model.__table__.columns.get("name")
+        model_opts = ModelOpts(Model=Invoice,
+                               rolling_total_column="amount",
+                               filter_by=[(sales_manager_col, "John")]),
+                               joins_filter_by=[SalesManager],
+                               columns=["date", "amount", SalesManager.__tablename__],
+                               edit_create_default_values=dict(department_id=52),
+                               read_use_container_width=True,
+                               available_sidebar_filter=["date", SalesManager.__tablename__]
+        )
+        ```
 
     """
 

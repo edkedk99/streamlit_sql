@@ -1,0 +1,28 @@
+site_name: streamlit-sql
+site_url: https://edkedek99.github.io/streamlit_sql/
+repo_url: https://github.com/edkedk99/streamlit_sql
+repo_name: Github
+remote_name: github
+strict: true
+
+theme:
+  name: material
+  palette:
+    primary: teal
+    features:
+      - navigation.tabs
+
+nav:
+    - Home: README.md
+    - API: api.md
+
+markdown_extensions:
+  - attr_list
+  - toc:
+        permalink: "#"
+
+plugins:
+  - search
+  - mkdocstrings
+
+
