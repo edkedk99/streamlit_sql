@@ -62,7 +62,7 @@ show_sql_ui(conn, model_opts)
 
 ## Customize
 
-You can configure the CRUD interface by giving optional arguments to the ModelOpts object. See its docstring for more information or at [documentation webpage](http://127.0.0.1:8000/streamlit_sql/api/#streamlit_sql.ModelOpts):
+You can configure the CRUD interface by giving optional arguments to the ModelOpts object. See its docstring for more information or at [documentation webpage](https://edkedk99.github.io/streamlit_sql/api/#streamlit_sql.ModelOpts):
 
 
 ## Multiple Models

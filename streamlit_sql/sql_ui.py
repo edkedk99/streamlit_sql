@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any
 
+from streamlit import session_state as ss
 import streamlit as st
 import streamlit_antd_components as sac
 from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute
@@ -170,6 +171,10 @@ class ShowPage:
         return data
 
 
+def update_query_params():
+    st.query_params.tablename = ss.model_opts_selected.Model.__tablename__
+
+
 def show_many(conn: SQLConnection, model_opts: list[ModelOpts]):
     if "tablename" not in st.query_params:
         first_model = model_opts[0]
@@ -187,8 +192,10 @@ def show_many(conn: SQLConnection, model_opts: list[ModelOpts]):
         options=model_opts,
         index=model_index,
         format_func=lambda model_opts: get_pretty_name(model_opts.Model.__tablename__),
+        key="model_opts_selected",
+        on_change=update_query_params,
     )
-    st.query_params.tablename = model_opts_selected.Model.__tablename__
+
     return model_opts_selected
 
 

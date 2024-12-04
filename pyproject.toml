@@ -40,9 +40,6 @@ line-length = 88
 ignore = ["SIM108", "E501",]
 select = ["UP","YTT", "A", "EM", "ICN","I", "SIM", "E", "F401"]
 
-
-
-
 [metadata]
 description = "Streamlit SQL"
 keyword = []
@@ -63,14 +60,9 @@ dependencies = [
     "streamlit",
     "streamlit_datalist",
     "streamlit_antd_components",
-    "streamlit_sql @ git+http://192.168.15.100:7020/code/streamlit_sql"
 ]
 
 [project.urls]
-# homepage = "https://github.com/edkedk99/hledger-args"
-# documentation = "https://edkedk99.github.io/hledger-args/"
-# repository = "https://github.com/edkedk99/hledger-args"
-# changelog = ""
-
-[project.scripts]
-phlc = "streamlit_sql.__main__:main"
+homepage = "https://github.com/edkedk99/streamlit_sql"
+documentation = "https://edkedk99.github.io/streamlit_sql/"
+repository = "https://github.com/edkedk99/streamlit_sql"
