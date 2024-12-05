@@ -73,8 +73,11 @@ class ReadStmt:
             col_type = col.type.python_type
             is_datetime = col_type is date or col_type is datetime
             is_value_tuple = isinstance(value, tuple)
+
             if is_datetime and is_value_tuple:
                 self.stmt_no_pag.where(col >= value[0], col <= value[1])
+            elif isinstance(value, filters.FkOpt):
+                self.stmt_no_pag = self.stmt_no_pag.where(col == value.idx)
             else:
                 self.stmt_no_pag = self.stmt_no_pag.where(col == value)
 
