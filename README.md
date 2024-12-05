@@ -4,6 +4,10 @@
 
 This package shows a CRUD frontend to a database using sqlalchemy in a streamlit app. With few lines of code, show the data as table and allow the user to **read, filter, update, create and delete rows** with many useful features.
 
+## Demo
+
+See the package in action [here](https://example-crud.streamlit.app/).
+
 ## Features
 
 ### READ
