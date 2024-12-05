@@ -125,21 +125,21 @@ class ReadData:
 
     @property
     def _initial_balance(self):
-        if not self.rolling_total_column:
-            return None
+        if not self.rolling_total_column or self.page == 1:
+            return 0
 
-        if self.page == 1:
-            offset = 0
-        else:
-            offset = (self.page - 1) * self.limit
-
-        rolling_column = self.read_stmt.Model.__table__.columns.get(
+        rolling_column = self.read_stmt.Model.__table__.columns[
             self.rolling_total_column
-        )
-        if rolling_column is None:
-            return None
+        ]
 
-        stmt_no_pag = select(func.sum(rolling_column))
+        initial_limit = (self.page - 1) * self.limit
+        subquery_no_pag = (
+            select(rolling_column.label("rolling_column"))
+            .limit(initial_limit)
+            .subquery()
+        )
+        stmt_no_pag = select(func.sum(subquery_no_pag.c.rolling_column))
+
         with self.read_stmt.conn.session as s:
             total = s.execute(stmt_no_pag).scalar() or 0
 

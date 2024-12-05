@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from streamlit import session_state as ss
 import streamlit as st
 import streamlit_antd_components as sac
 from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute
 from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
+from streamlit import session_state as ss
 from streamlit.connections.sql_connection import SQLConnection
 
 from streamlit_sql import read_model, update_model
