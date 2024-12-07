@@ -1,23 +1,23 @@
 from datetime import date
 
 import streamlit as st
-from sqlalchemy import update
+from sqlalchemy import select, update
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
+from streamlit import session_state as ss
 from streamlit.connections.sql_connection import SQLConnection
-from streamlit.delta_generator import DeltaGenerator
 from streamlit_datalist import stDatalist
 
 from streamlit_sql.filters import ExistingData
 from streamlit_sql.lib import get_pretty_name
 
 
-def show_status(update_ok: bool, message: str, container: DeltaGenerator):
-    if update_ok:
-        container.info(message)
-    else:
-        container.error(message)
+def update_state(status: bool, msg: str):
+    ss.update_ok = status
+    ss.update_message = msg
+    ss.opened = True
+    st.rerun()
 
 
 class InputFields:
@@ -130,22 +130,23 @@ class UpdateRow:
                 )
                 s.execute(stmt)
                 s.commit()
-                st.cache_data.clear()
-                return True, "Atualizado com sucesso"
+                new_row_stmt = select(self.Model).where(self.Model.id == updated["id"])  # pyright: ignore
+                new_row = s.execute(new_row_stmt).scalar_one()
+                update_state(True, f"Atualizado com sucesso {new_row}")
             except Exception as e:
-                return False, str(e)
+                update_state(False, str(e))
 
     def delete(self, idx: int):
         with self.conn.session as s:
-            row = s.get_one(self.Model, idx)
+            stmt = select(self.Model).where(self.Model.id == idx)  # pyright: ignore
+            row = s.execute(stmt).scalar_one()
+            row_str = str(row)
             try:
                 s.delete(row)
                 s.commit()
-                st.cache_data.clear()
-                return True, "Removido com Sucesso"
+                update_state(True, f"Deletado com sucesso {row_str}")
             except Exception as e:
-                s.rollback()
-                return False, str(e)
+                update_state(False, str(e))
 
     def show(self):
         msg_container = st.empty()
@@ -159,12 +160,10 @@ class UpdateRow:
         del_btn = st.button("Delete", key="delete_btn", type="primary")
 
         if update_btn:
-            update_ok, message = self.save(updated)
-            show_status(update_ok, message, msg_container)
+            self.save(updated)
 
         if del_btn:
-            update_ok, message = self.delete(self.row_id)
-            show_status(update_ok, message, msg_container)
+            self.delete(self.row_id)
 
     def show_dialog(self):
         pretty_name = get_pretty_name(self.Model.__tablename__)
@@ -217,10 +216,12 @@ class CreateRow:
         if create_btn:
             row = self.Model(**created)
             with self.conn.session as s:
-                s.add(row)
-                s.commit()
-                st.cache_data.clear()
-                st.balloons()
+                try:
+                    s.add(row)
+                    s.commit()
+                    update_state(True, f"Criado com sucesso {row}")
+                except Exception as e:
+                    update_state(False, str(e))
 
     def show_dialog(self):
         pretty_name = get_pretty_name(self.Model.__tablename__)

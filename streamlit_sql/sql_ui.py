@@ -9,7 +9,9 @@ from streamlit import session_state as ss
 from streamlit.connections.sql_connection import SQLConnection
 
 from streamlit_sql import read_model, update_model
-from streamlit_sql.lib import get_pretty_name, get_row_index
+from streamlit_sql.lib import get_pretty_name, get_row_index, set_state
+
+from streamlit import session_state as ss
 
 
 @dataclass
@@ -100,6 +102,13 @@ class ShowPage:
         with col_title:
             st.subheader(self.pretty_name)
 
+        set_state("update_ok", None)
+        set_state("update_message", None)
+        if ss.update_ok is True:
+            self.header_container.success(ss.update_message, icon=":material/thumb_up:")
+        if ss.update_ok is False:
+            self.header_container.error(ss.update_message, icon=":material/thumb_down:")
+
     def add_pagination(_self, stmt_no_pag_str: str):
         pag_col1, pag_col2 = _self.pag_container.columns([0.2, 0.8])
 
@@ -156,9 +165,9 @@ class ShowPage:
             selection_mode="single-row",
         )
 
+        set_state("opened", False)
         selected_row = get_row_index(selection_state)
-
-        if selected_row is not None:
+        if not ss.opened and selected_row is not None:
             row_id = int(data.iloc[selected_row]["id"])
             update_row = update_model.UpdateRow(
                 self.conn,
@@ -167,6 +176,8 @@ class ShowPage:
                 self.model_opts.edit_create_default_values,
             )
             update_row.show_dialog()
+
+        ss.opened = False
 
         return data
 
