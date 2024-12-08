@@ -118,7 +118,7 @@ class ReadData:
 
         _self.stmt_pag = _self.get_stmt_pag()
         stmt_params = dict(_self.stmt_pag.compile().params)
-        _self.data = _self.get_data(str(_self.stmt_pag), stmt_params, ss.updated)
+        _self.data = _self.get_data(str(_self.stmt_pag), stmt_params, ss.stsql_updated)
 
     def get_stmt_pag(
         _self,

@@ -64,7 +64,10 @@ class ShowPage:
         self.conn = conn
         self.model_opts = model_opts
 
-        set_state("updated", 1)
+        set_state("stsql_updated", 1)
+        set_state("stsql_update_ok", None)
+        set_state("stsql_update_message", None)
+        set_state("stsql_opened", False)
 
         self.pretty_name = get_pretty_name(model_opts.Model.__tablename__)
         self.read_stmt = read_model.ReadStmt(
@@ -102,12 +105,14 @@ class ShowPage:
         with col_title:
             st.subheader(self.pretty_name)
 
-        set_state("update_ok", None)
-        set_state("update_message", None)
-        if ss.update_ok is True:
-            self.header_container.success(ss.update_message, icon=":material/thumb_up:")
-        if ss.update_ok is False:
-            self.header_container.error(ss.update_message, icon=":material/thumb_down:")
+        if ss.stsql_update_ok is True:
+            self.header_container.success(
+                ss.stsql_update_message, icon=":material/thumb_up:"
+            )
+        if ss.stsql_update_ok is False:
+            self.header_container.error(
+                ss.stsql_update_message, icon=":material/thumb_down:"
+            )
 
     def add_pagination(_self, stmt_no_pag_str: str):
         pag_col1, pag_col2 = _self.pag_container.columns([0.2, 0.8])
@@ -165,9 +170,8 @@ class ShowPage:
             selection_mode="single-row",
         )
 
-        set_state("opened", False)
         selected_row = get_row_index(selection_state)
-        if not ss.opened and selected_row is not None:
+        if not ss.stsql_opened and selected_row is not None:
             row_id = int(data.iloc[selected_row]["id"])
             update_row = update_model.UpdateRow(
                 self.conn,
@@ -177,7 +181,7 @@ class ShowPage:
             )
             update_row.show_dialog()
 
-        ss.opened = False
+        ss.stsql_opened = False
 
         return data
 

@@ -14,11 +14,11 @@ from streamlit_sql.lib import get_pretty_name
 
 
 def update_state(status: bool, msg: str):
-    ss.update_ok = status
-    ss.update_message = msg
-    ss.opened = True
-    print(f"ss.updated before changing {ss.updated}")
-    ss.updated += 1
+    ss.stsql_update_ok = status
+    ss.stsql_update_message = msg
+    ss.stsql_opened = True
+    print(f"ss.stsql_updated before changing {ss.stsql_updated}")
+    ss.stsql_updated += 1
     st.rerun()
 
 
@@ -132,7 +132,9 @@ class UpdateRow:
                 )
                 s.execute(stmt)
                 s.commit()
-                new_row_stmt = select(self.Model).where(self.Model.id == updated["id"])  # pyright: ignore
+                new_row_stmt = select(self.Model).where(
+                    self.Model.id == updated["id"]
+                )  # pyright: ignore
                 new_row = s.execute(new_row_stmt).scalar_one()
                 update_state(True, f"Atualizado com sucesso {new_row}")
             except Exception as e:
@@ -222,7 +224,7 @@ class CreateRow:
                     s.add(row)
                     s.commit()
                     update_state(True, f"Criado com sucesso {row}")
-                    ss.update = ss.updated * -1
+                    ss.update = ss.stsql_updated * -1
                 except Exception as e:
                     update_state(False, str(e))
 
