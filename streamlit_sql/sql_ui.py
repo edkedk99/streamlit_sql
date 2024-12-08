@@ -11,8 +11,6 @@ from streamlit.connections.sql_connection import SQLConnection
 from streamlit_sql import read_model, update_model
 from streamlit_sql.lib import get_pretty_name, get_row_index, set_state
 
-from streamlit import session_state as ss
-
 
 @dataclass
 class ModelOpts:
@@ -65,6 +63,8 @@ class ShowPage:
     def __init__(self, conn: SQLConnection, model_opts: ModelOpts) -> None:
         self.conn = conn
         self.model_opts = model_opts
+
+        set_state("updated", 1)
 
         self.pretty_name = get_pretty_name(model_opts.Model.__tablename__)
         self.read_stmt = read_model.ReadStmt(

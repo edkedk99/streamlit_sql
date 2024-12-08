@@ -9,6 +9,7 @@ from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
 from sqlalchemy.sql.schema import ForeignKey
+from streamlit import session_state as ss
 
 from streamlit_sql.lib import get_pretty_name
 
@@ -21,7 +22,10 @@ class FkOpt:
 
 class ExistingData:
     def __init__(
-        _self, _session: Session, _Model: Type[DeclarativeBase], table_name: str
+        _self,
+        _session: Session,
+        _Model: Type[DeclarativeBase],
+        table_name: str,
     ) -> None:
         _self.session = _session
         _self.Model = _Model
@@ -31,9 +35,10 @@ class ExistingData:
         _self._models = [reg for reg in reg_values if hasattr(reg, "__tablename__")]
 
         table_name = _Model.__tablename__
-        _self.text = _self.get_text(table_name)
-        _self.dt = _self.get_dt(table_name)
-        _self.fk = _self.get_fk(table_name)
+        print(f"ss.updated in existing {ss.updated}")
+        _self.text = _self.get_text(table_name, ss.updated)
+        _self.dt = _self.get_dt(table_name, ss.updated)
+        _self.fk = _self.get_fk(table_name, ss.updated)
 
     def _get_str_opts(self, column) -> Sequence[str]:
         col_name = column.name
@@ -42,12 +47,13 @@ class ExistingData:
         return opts
 
     @st.cache_data
-    def get_text(_self, table_name: str) -> dict[str, Sequence[str]]:
+    def get_text(_self, table_name: str, updated: int) -> dict[str, Sequence[str]]:
         opts = {
             col.name: _self._get_str_opts(col)
             for col in _self.cols
             if col.type.python_type is str
         }
+        print("again existing")
         return opts
 
     def _get_dt_col(self, column):
@@ -57,7 +63,7 @@ class ExistingData:
         return min_dt, max_dt
 
     @st.cache_data
-    def get_dt(_self, table_name: str) -> dict[str, tuple[date, date]]:
+    def get_dt(_self, table_name: str, updated: int) -> dict[str, tuple[date, date]]:
         opts = {
             col.name: _self._get_dt_col(col)
             for col in _self.cols
@@ -82,7 +88,7 @@ class ExistingData:
         return opts
 
     @st.cache_data
-    def get_fk(_self, table_name: str):
+    def get_fk(_self, table_name: str, updated: int):
         fk_cols = [col for col in _self.cols if len(list(col.foreign_keys)) > 0]
         opts = {
             col.description: _self.get_foreign_opts(list(col.foreign_keys)[0])

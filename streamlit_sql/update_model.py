@@ -17,6 +17,8 @@ def update_state(status: bool, msg: str):
     ss.update_ok = status
     ss.update_message = msg
     ss.opened = True
+    print(f"ss.updated before changing {ss.updated}")
+    ss.updated += 1
     st.rerun()
 
 
@@ -220,6 +222,7 @@ class CreateRow:
                     s.add(row)
                     s.commit()
                     update_state(True, f"Criado com sucesso {row}")
+                    ss.update = ss.updated * -1
                 except Exception as e:
                     update_state(False, str(e))
 

@@ -7,6 +7,7 @@ import streamlit as st
 from sqlalchemy import Row, func, select
 from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute, selectinload
 from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
+from streamlit import session_state as ss
 from streamlit.connections.sql_connection import SQLConnection
 
 from streamlit_sql import filters
@@ -117,7 +118,7 @@ class ReadData:
 
         _self.stmt_pag = _self.get_stmt_pag()
         stmt_params = dict(_self.stmt_pag.compile().params)
-        _self.data = _self.get_data(str(_self.stmt_pag), stmt_params)
+        _self.data = _self.get_data(str(_self.stmt_pag), stmt_params, ss.updated)
 
     def get_stmt_pag(
         _self,
@@ -175,7 +176,7 @@ class ReadData:
         return row_data
 
     @st.cache_data
-    def get_data(_self, stmt_pag_str: str, stmt_params: dict):
+    def get_data(_self, stmt_pag_str: str, stmt_params: dict, updated: int):
         with _self.read_stmt.conn.session as s:
             rows = s.execute(_self.stmt_pag)
             rows_dict = [_self._get_row(row) for row in rows]
