@@ -49,6 +49,10 @@ fix:
 	isort --profile black $(modules) && \
 	black $(modules)
 
-
+.PHONY: publish
+publish:
+	source venv/bin/activate && \
+	python -m build && \
+	python -m twine upload dist/*
 
 

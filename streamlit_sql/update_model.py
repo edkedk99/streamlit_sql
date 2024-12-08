@@ -17,7 +17,6 @@ def update_state(status: bool, msg: str):
     ss.stsql_update_ok = status
     ss.stsql_update_message = msg
     ss.stsql_opened = True
-    print(f"ss.stsql_updated before changing {ss.stsql_updated}")
     ss.stsql_updated += 1
     st.rerun()
 
@@ -133,7 +132,7 @@ class UpdateRow:
                 s.execute(stmt)
                 s.commit()
                 new_row_stmt = select(self.Model).where(
-                    self.Model.id == updated["id"]
+                    self.Model.id == updated["id"]  # pyright: ignore
                 )  # pyright: ignore
                 new_row = s.execute(new_row_stmt).scalar_one()
                 update_state(True, f"Atualizado com sucesso {new_row}")

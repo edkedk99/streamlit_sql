@@ -35,7 +35,7 @@ class ExistingData:
         _self._models = [reg for reg in reg_values if hasattr(reg, "__tablename__")]
 
         table_name = _Model.__tablename__
-        print(f"ss.stsql_updated in existing {ss.stsql_updated}")
+
         _self.text = _self.get_text(table_name, ss.stsql_updated)
         _self.dt = _self.get_dt(table_name, ss.stsql_updated)
         _self.fk = _self.get_fk(table_name, ss.stsql_updated)
@@ -53,7 +53,6 @@ class ExistingData:
             for col in _self.cols
             if col.type.python_type is str
         }
-        print("again existing")
         return opts
 
     def _get_dt_col(self, column):
