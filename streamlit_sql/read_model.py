@@ -56,7 +56,12 @@ class ReadStmt:
     def _add_sidebar_filters(self):
         with self.conn.session as s:
             table_name = self.Model.__tablename__
-            existing = filters.ExistingData(s, self.Model, table_name)
+            existing = filters.ExistingData(
+                session=s,
+                Model=self.Model,
+                filter_by=self.filter_by,
+                joins_filter_by=self.joins_filter_by,
+            )
 
         sidebar_filters = filters.SidebarFilter(
             self.Model,

@@ -6,6 +6,7 @@ import streamlit as st
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import distinct, func, select
 from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute
+from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
 from sqlalchemy.sql.schema import ForeignKey
@@ -22,27 +23,30 @@ class FkOpt:
 
 class ExistingData:
     def __init__(
-        _self,
-        _session: Session,
-        _Model: Type[DeclarativeBase],
-        table_name: str,
+        self,
+        session: Session,
+        Model: Type[DeclarativeBase],
+        filter_by: list[tuple[InstrumentedAttribute, Any]],
+        joins_filter_by: list[DeclarativeAttributeIntercept],
     ) -> None:
-        _self.session = _session
-        _self.Model = _Model
+        self.session = session
+        self.Model = Model
+        self.filter_by = filter_by
+        self.joins_filter_by = joins_filter_by
 
-        _self.cols = _Model.__table__.columns
-        reg_values: Any = _Model.registry._class_registry.values()
-        _self._models = [reg for reg in reg_values if hasattr(reg, "__tablename__")]
+        self.cols = Model.__table__.columns
+        reg_values: Any = Model.registry._class_registry.values()
+        self._models = [reg for reg in reg_values if hasattr(reg, "__tablename__")]
 
-        table_name = _Model.__tablename__
+        table_name = Model.__tablename__
 
-        _self.text = _self.get_text(table_name, ss.stsql_updated)
-        _self.dt = _self.get_dt(table_name, ss.stsql_updated)
-        _self.fk = _self.get_fk(table_name, ss.stsql_updated)
+        self.text = self.get_text(table_name, ss.stsql_updated)
+        self.dt = self.get_dt(table_name, ss.stsql_updated)
+        self.fk = self.get_fk(table_name, ss.stsql_updated)
 
     def _get_str_opts(self, column) -> Sequence[str]:
         col_name = column.name
-        stmt = select(distinct(column)).limit(10000)
+        stmt = select(distinct(column)).select_from(self.Model).limit(10000)
         opts = self.session.execute(stmt).scalars().all()
         return opts
 
@@ -82,7 +86,8 @@ class ExistingData:
         )
         fk_pk_name = foreign_key.column.description
 
-        rows = self.session.query(model).limit(10000)
+        stmt = select(model).join(self.Model).limit(10000)
+        rows = self.session.execute(stmt).scalars()
         opts = [self.get_foreign_opt(row, fk_pk_name) for row in rows]
         return opts
 

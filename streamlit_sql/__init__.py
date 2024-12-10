@@ -35,7 +35,13 @@ def show_create(
         default_values (dict, optional): A dict with column name as keys and values to be default. The form will not display those columns and its value will be added to the Model object
 
     """
-    create_row = CreateRow(conn, Model, default_values)
+    create_row = CreateRow(
+        conn=conn,
+        Model=Model,
+        filter_by=[],
+        joins_filter_by=[],
+        default_values=default_values,
+    )
     pretty_name = get_pretty_name(Model.__tablename__)
     create_row.show(pretty_name)
 
@@ -56,5 +62,12 @@ def show_update(
         default_values (dict, optional): A dict with column name as keys and values to be default. The form will not display those columns and its value will be added to the Model object
 
     """
-    update_row = UpdateRow(conn, Model, row_id, default_values)
+    update_row = UpdateRow(
+        conn=conn,
+        filter_by=[],
+        joins_filter_by=[],
+        Model=Model,
+        row_id=row_id,
+        default_values=default_values,
+    )
     update_row.show()
