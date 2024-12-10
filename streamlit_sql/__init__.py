@@ -38,8 +38,6 @@ def show_create(
     create_row = CreateRow(
         conn=conn,
         Model=Model,
-        filter_by=[],
-        joins_filter_by=[],
         default_values=default_values,
     )
     pretty_name = get_pretty_name(Model.__tablename__)
@@ -64,8 +62,6 @@ def show_update(
     """
     update_row = UpdateRow(
         conn=conn,
-        filter_by=[],
-        joins_filter_by=[],
         Model=Model,
         row_id=row_id,
         default_values=default_values,

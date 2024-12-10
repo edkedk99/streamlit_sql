@@ -6,7 +6,6 @@ import streamlit as st
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import distinct, func, select
 from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute
-from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
 from sqlalchemy.sql.schema import ForeignKey
@@ -26,13 +25,9 @@ class ExistingData:
         self,
         session: Session,
         Model: Type[DeclarativeBase],
-        filter_by: list[tuple[InstrumentedAttribute, Any]],
-        joins_filter_by: list[DeclarativeAttributeIntercept],
     ) -> None:
         self.session = session
         self.Model = Model
-        self.filter_by = filter_by
-        self.joins_filter_by = joins_filter_by
 
         self.cols = Model.__table__.columns
         reg_values: Any = Model.registry._class_registry.values()
@@ -86,7 +81,7 @@ class ExistingData:
         )
         fk_pk_name = foreign_key.column.description
 
-        stmt = select(model).join(self.Model).limit(10000)
+        stmt = select(model)
         rows = self.session.execute(stmt).scalars()
         opts = [self.get_foreign_opt(row, fk_pk_name) for row in rows]
         return opts

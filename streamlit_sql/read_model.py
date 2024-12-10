@@ -59,8 +59,6 @@ class ReadStmt:
             existing = filters.ExistingData(
                 session=s,
                 Model=self.Model,
-                filter_by=self.filter_by,
-                joins_filter_by=self.joins_filter_by,
             )
 
         sidebar_filters = filters.SidebarFilter(

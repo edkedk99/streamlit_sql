@@ -98,8 +98,6 @@ class ShowPage:
                 create_row = update_model.CreateRow(
                     conn=self.conn,
                     Model=self.model_opts.Model,
-                    filter_by=self.read_stmt.filter_by,
-                    joins_filter_by=self.read_stmt.joins_filter_by,
                     default_values=self.model_opts.edit_create_default_values,
                 )
                 create_row.show_dialog()
@@ -177,8 +175,6 @@ class ShowPage:
             row_id = int(data.iloc[selected_row]["id"])
             update_row = update_model.UpdateRow(
                 conn=self.conn,
-                filter_by=self.read_stmt.filter_by,
-                joins_filter_by=self.read_stmt.joins_filter_by,
                 Model=self.model_opts.Model,
                 row_id=row_id,
                 default_values=self.model_opts.edit_create_default_values,

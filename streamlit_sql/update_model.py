@@ -1,10 +1,8 @@
 from datetime import date
-from typing import Any
 
 import streamlit as st
 from sqlalchemy import select, update
-from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute
-from sqlalchemy.orm.decl_api import DeclarativeAttributeIntercept
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
 from streamlit import session_state as ss
@@ -29,21 +27,15 @@ class InputFields:
         session: Session,
         Model: type[DeclarativeBase],
         key_prefix: str,
-        filter_by: list[tuple[InstrumentedAttribute, Any]],
-        joins_filter_by: list[DeclarativeAttributeIntercept],
     ) -> None:
         self.session = session
         self.Model = Model
         self.key_prefix = key_prefix
-        self.filter_by = filter_by
-        self.joins_filter_by = joins_filter_by
 
         table_name = self.Model.__tablename__
         self.existing_data = ExistingData(
             session=session,
             Model=Model,
-            filter_by=filter_by,
-            joins_filter_by=joins_filter_by,
         )
 
     def input_fk(self, col_name: str, value: int | None):
@@ -104,8 +96,6 @@ class UpdateRow:
     def __init__(
         self,
         conn: SQLConnection,
-        filter_by: list[tuple[InstrumentedAttribute, Any]],
-        joins_filter_by: list[DeclarativeAttributeIntercept],
         Model: type[DeclarativeBase],
         row_id: int,
         default_values: dict = dict(),
@@ -114,8 +104,6 @@ class UpdateRow:
         self.Model = Model
         self.row_id = row_id
         self.default_values = default_values
-        self.filter_by = filter_by
-        self.joins_filter_by = joins_filter_by
 
         with conn.session as s:
             self.row = s.get_one(Model, row_id)
@@ -123,8 +111,6 @@ class UpdateRow:
                 s,
                 Model,
                 "update",
-                filter_by,
-                joins_filter_by,
             )
 
     def get_updates(self):
@@ -207,24 +193,14 @@ class CreateRow:
         self,
         conn: SQLConnection,
         Model: type[DeclarativeBase],
-        filter_by: list[tuple[InstrumentedAttribute, Any]],
-        joins_filter_by: list[DeclarativeAttributeIntercept],
         default_values: dict = dict(),
     ) -> None:
         self.conn = conn
         self.Model = Model
         self.default_values = default_values
-        self.filter_by = filter_by
-        self.joins_filter_by = joins_filter_by
 
         with conn.session as s:
-            self.input_fields = InputFields(
-                s,
-                Model,
-                "create",
-                filter_by,
-                joins_filter_by,
-            )
+            self.input_fields = InputFields(s, Model, "create")
 
     def get_fields(self):
         cols = self.Model.__table__.columns
