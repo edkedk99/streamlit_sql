@@ -10,7 +10,7 @@ from streamlit.connections.sql_connection import SQLConnection
 from streamlit_datalist import stDatalist
 
 from streamlit_sql.filters import ExistingData
-from streamlit_sql.lib import get_pretty_name
+from streamlit_sql.lib import get_pretty_name, set_state
 
 
 def update_state(status: bool, msg: str):
@@ -27,15 +27,18 @@ class InputFields:
         session: Session,
         Model: type[DeclarativeBase],
         key_prefix: str,
+        default_values: dict,
     ) -> None:
         self.session = session
         self.Model = Model
         self.key_prefix = key_prefix
+        self.default_values = default_values
 
         table_name = self.Model.__tablename__
         self.existing_data = ExistingData(
             session=session,
             Model=Model,
+            default_values=default_values,
         )
 
     def input_fk(self, col_name: str, value: int | None):
@@ -105,13 +108,11 @@ class UpdateRow:
         self.row_id = row_id
         self.default_values = default_values
 
+        set_state("stsql_updated", 0)
+
         with conn.session as s:
             self.row = s.get_one(Model, row_id)
-            self.input_fields = InputFields(
-                s,
-                Model,
-                "update",
-            )
+            self.input_fields = InputFields(s, Model, "update", default_values)
 
     def get_updates(self):
         cols = self.Model.__table__.columns
@@ -145,9 +146,9 @@ class UpdateRow:
                     self.Model.id == updated["id"]  # pyright: ignore
                 )  # pyright: ignore
                 new_row = s.execute(new_row_stmt).scalar_one()
-                update_state(True, f"Atualizado com sucesso {new_row}")
+                return True, f"Atualizado com sucesso {new_row}"
             except Exception as e:
-                update_state(False, str(e))
+                return False, str(e)
 
     def delete(self, idx: int):
         with self.conn.session as s:
@@ -157,9 +158,9 @@ class UpdateRow:
             try:
                 s.delete(row)
                 s.commit()
-                update_state(True, f"Deletado com sucesso {row_str}")
+                return True, f"Deletado com sucesso {row_str}"
             except Exception as e:
-                update_state(False, str(e))
+                return False, str(e)
 
     def show(self):
         msg_container = st.empty()
@@ -173,17 +174,29 @@ class UpdateRow:
         del_btn = st.button("Delete", key="delete_btn", type="primary")
 
         if update_btn:
-            self.save(updated)
-
-        if del_btn:
-            self.delete(self.row_id)
+            ss.stsql_updated += 1
+            return self.save(updated)
+        elif del_btn:
+            ss.stsql_updated += 1
+            return self.delete(self.row_id)
+        else:
+            return None, None
 
     def show_dialog(self):
         pretty_name = get_pretty_name(self.Model.__tablename__)
 
         @st.dialog(f"Edit {pretty_name}", width="large")  # pyright: ignore
         def wrap_show_update():
-            self.show()
+            set_state("stsql_updated", 0)
+            updated_before = ss.stsql_updated
+            status, msg = self.show()
+
+            ss.stsql_update_ok = status
+            ss.stsql_update_message = msg
+            ss.stsql_opened = True
+
+            if ss.stsql_updated > updated_before:
+                st.rerun()
 
         wrap_show_update()
 
@@ -199,8 +212,10 @@ class CreateRow:
         self.Model = Model
         self.default_values = default_values
 
+        set_state("stsql_updated", 0)
+
         with conn.session as s:
-            self.input_fields = InputFields(s, Model, "create")
+            self.input_fields = InputFields(s, Model, "create", default_values)
 
     def get_fields(self):
         cols = self.Model.__table__.columns
@@ -232,16 +247,28 @@ class CreateRow:
                 try:
                     s.add(row)
                     s.commit()
-                    update_state(True, f"Criado com sucesso {row}")
-                    ss.update = ss.stsql_updated * -1
+                    ss.stsql_updated += 1
+                    return True, f"Criado com sucesso {row}"
                 except Exception as e:
-                    update_state(False, str(e))
+                    ss.stsql_updated += 1
+                    return False, str(e)
+        else:
+            return None, None
 
     def show_dialog(self):
         pretty_name = get_pretty_name(self.Model.__tablename__)
 
-        @st.dialog(f"Edit {pretty_name}", width="large")  # pyright: ignore
+        @st.dialog(f"Create {pretty_name}", width="large")  # pyright: ignore
         def wrap_show_update():
-            self.show(pretty_name)
+            set_state("stsql_updated", 0)
+            updated_before = ss.stsql_updated
+            status, msg = self.show(pretty_name)
+
+            ss.stsql_update_ok = status
+            ss.stsql_update_message = msg
+            ss.stsql_opened = True
+
+            if ss.stsql_updated > updated_before:
+                st.rerun()
 
         wrap_show_update()

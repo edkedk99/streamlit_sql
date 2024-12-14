@@ -4,7 +4,7 @@ from typing import Any, Sequence, Type
 
 import streamlit as st
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import distinct, func, select
+from sqlalchemy import Select, distinct, func, select
 from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
@@ -25,9 +25,11 @@ class ExistingData:
         self,
         session: Session,
         Model: Type[DeclarativeBase],
+        default_values: dict,
     ) -> None:
         self.session = session
         self.Model = Model
+        self.default_values = default_values
 
         self.cols = Model.__table__.columns
         reg_values: Any = Model.registry._class_registry.values()
@@ -39,9 +41,18 @@ class ExistingData:
         self.dt = self.get_dt(table_name, ss.stsql_updated)
         self.fk = self.get_fk(table_name, ss.stsql_updated)
 
+    def add_default_where(self, stmt: Select):
+        for colname, value in self.default_values.items():
+            default_col = self.cols.get(colname)
+            stmt = stmt.where(default_col == value)
+
+        return stmt
+
     def _get_str_opts(self, column) -> Sequence[str]:
         col_name = column.name
         stmt = select(distinct(column)).select_from(self.Model).limit(10000)
+        stmt = self.add_default_where(stmt)
+
         opts = self.session.execute(stmt).scalars().all()
         return opts
 
@@ -74,23 +85,32 @@ class ExistingData:
         fk_opt = FkOpt(idx, str(row))
         return fk_opt
 
-    def get_foreign_opts(self, foreign_key: ForeignKey):
+    def get_foreign_opts(self, col, foreign_key: ForeignKey):
         foreign_table_name = foreign_key.column.table.name
         model = next(
             reg for reg in self._models if reg.__tablename__ == foreign_table_name
         )
         fk_pk_name = foreign_key.column.description
 
-        stmt = select(model)
+        stmt = select(model).distinct()
+
+        if col.table.name != foreign_key.column.table.name:
+            stmt = stmt.join(self.Model, col == foreign_key.column)
+
+        stmt = self.add_default_where(stmt)
+
         rows = self.session.execute(stmt).scalars()
+
         opts = [self.get_foreign_opt(row, fk_pk_name) for row in rows]
+        opts_idxs = {opt.idx: opt for opt in opts}
+        opts_unique = list(opts_idxs.values())
         return opts
 
     @st.cache_data
     def get_fk(_self, table_name: str, updated: int):
         fk_cols = [col for col in _self.cols if len(list(col.foreign_keys)) > 0]
         opts = {
-            col.description: _self.get_foreign_opts(list(col.foreign_keys)[0])
+            col.description: _self.get_foreign_opts(col, list(col.foreign_keys)[0])
             for col in fk_cols
             if col.description
         }
