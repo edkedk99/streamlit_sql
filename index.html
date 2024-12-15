@@ -358,15 +358,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#multiple-models" class="md-nav__link">
-    <span class="md-ellipsis">
-      Multiple Models
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#only-create-or-update-form" class="md-nav__link">
     <span class="md-ellipsis">
       Only create or update form
@@ -517,15 +508,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#multiple-models" class="md-nav__link">
-    <span class="md-ellipsis">
-      Multiple Models
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#only-create-or-update-form" class="md-nav__link">
     <span class="md-ellipsis">
       Only create or update form
@@ -554,7 +536,7 @@
 
 <h1 id="streamlit_sql">streamlit_sql<a class="headerlink" href="#streamlit_sql" title="Permanent link">#</a></h1>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">#</a></h2>
-<p>This package shows a CRUD frontend to a database using sqlalchemy in a streamlit app. With few lines of code, show the data as table and allow the user to <strong>read, filter, update, create and delete rows</strong> with many useful features.</p>
+<p>This package shows a CRUD frontend to a database using sqlalchemy in a streamlit app. With just one line of code, show the data as table and allow the user to <strong>read, filter, update, create and delete rows</strong> with many useful features.</p>
 <h2 id="demo">Demo<a class="headerlink" href="#demo" title="Permanent link">#</a></h2>
 <p>See the package in action <a href="https://example-crud.streamlit.app/">here</a>.</p>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">#</a></h2>
@@ -563,13 +545,13 @@
 <li>Display as a regular st.dataframe</li>
 <li>Add pagination, displaying only a set of rows each time</li>
 <li>Display the string representation of a ForeignKey column (Using <strong>str</strong> method), instead of its id number</li>
-<li>Select the columns to display to the user</li>
+<li>Set the dataframe to be displayed using standard sqlalchemy select statement, where you can JOIN, ORDER BY, WHERE, etc.</li>
 <li>Add a column to show the rolling sum of a numeric column</li>
 </ul>
 <h3 id="filter">FILTER<a class="headerlink" href="#filter" title="Permanent link">#</a></h3>
 <ul>
-<li>Filter the data by some columns before presenting the table. It can use columns from relationship tables too.</li>
-<li>Let users filter the columns by selecting conditions in the sidebar</li>
+<li>Filter the data by some columns before presenting the table.</li>
+<li>Let users filter the columns by selecting conditions in the filter expander</li>
 <li>Give possible candidates when filtering using existing values for the columns</li>
 <li>Let users select ForeignKey's values using the string representation of the foreign table, instead of its id number</li>
 </ul>
@@ -595,17 +577,34 @@
 <pre><code class="language-bash">pip install streamlit_sql
 </code></pre>
 <p>Define a ModelOpts and add it to the argument of <em>show_sql_ui</em> function:</p>
-<pre><code class="language-python">from streamlit_sql import ModelOpts, show_sql_ui
+<pre><code class="language-python">from streamlit_sql import show_sql_ui
+from sqlalchemy import select
 
 conn = st.connection(&quot;sql&quot;, url=&quot;&lt;db_url&gt;&quot;)
 
-model_opts = ModelOpts(MyModel)
+stmt = (
+    select(
+        db.Invoice.id,
+        db.Invoice.Date,
+        db.Invoice.amount,
+        db.Client.name,
+    )
+    .join(db.Client)
+    .where(db.Invoice.amount &gt; 1000)
+    .order_by(db.Invoice.date)
+)
+
+show_sql_ui(conn=conn,
+            read_instance=stmt,
+            edit_create_model=db.Invoice,
+            available_filter=[&quot;name&quot;],
+            rolling_total_column=&quot;amount&quot;,
+)
+
 show_sql_ui(conn, model_opts)
 </code></pre>
 <h2 id="customize">Customize<a class="headerlink" href="#customize" title="Permanent link">#</a></h2>
-<p>You can configure the CRUD interface by giving optional arguments to the ModelOpts object. See its docstring for more information or at <a href="https://edkedk99.github.io/streamlit_sql/api/#streamlit_sql.ModelOpts">documentation webpage</a>:</p>
-<h2 id="multiple-models">Multiple Models<a class="headerlink" href="#multiple-models" title="Permanent link">#</a></h2>
-<p>You can set the model_opts argument to a list of ModelOpts objects. In this case, a st.selectbox will let user to select the table to work on.</p>
+<p>You can adjust the CRUD interface by the select statement you provide to <em>read_instance</em> arg and giving optional arguments to the <em>show_sql_ui</em> function. See the docstring for more information or at <a href="https://edkedk99.github.io/streamlit_sql/api/#streamlit_sql.show_sql_ui">documentation webpage</a>:</p>
 <h2 id="only-create-or-update-form">Only create or update form<a class="headerlink" href="#only-create-or-update-form" title="Permanent link">#</a></h2>
 <p>You can display just a create or update/delete form without the read interface using functions <em>show_updade</em>, and <em>show_create</em>.</p>
 
