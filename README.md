@@ -14,7 +14,6 @@ See the package in action [here](https://example-crud.streamlit.app/).
 
 - Display as a regular st.dataframe
 - Add pagination, displaying only a set of rows each time
-- Display the string representation of a ForeignKey column (Using __str__ method), instead of its id number
 - Set the dataframe to be displayed using standard sqlalchemy select statement, where you can JOIN, ORDER BY, WHERE, etc.
 - Add a column to show the rolling sum of a numeric column
 
@@ -52,7 +51,7 @@ Install the package using pip:
 pip install streamlit_sql
 ```
 
-Define a ModelOpts and add it to the argument of *show_sql_ui* function:
+Run `show_sql_ui` as the example below:
 
 ```python
 from streamlit_sql import show_sql_ui
@@ -81,6 +80,13 @@ show_sql_ui(conn=conn,
 
 show_sql_ui(conn, model_opts)
 ```
+
+### Interface
+
+- Filter: Open the "Filter" expander and fill the inputs
+- Add row: Click on "plus" button (no dataframe row can be selected)
+- Edit row: Click on "pencil" button (one and only one dataframe row should be selected)
+- Delete row: Click on "trash" button (one or more dataframe rows should be selected)
 
 
 ## Customize

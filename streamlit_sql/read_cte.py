@@ -11,12 +11,12 @@ from sqlalchemy.sql.expression import literal_column
 from streamlit.connections.sql_connection import SQLConnection
 from streamlit.delta_generator import DeltaGenerator
 import json
-from streamlit_sql.lib import get_pretty_name
+from streamlit_sql.lib import get_pretty_name, set_state
 
 hash_funcs: dict[Any, Callable[[Any], Any]] = {
     pd.Series: lambda serie: serie.to_dict(),
-    CTE: lambda sel: (str(sel), json.dumps(sel.compile().params, sort_keys=True)),
-    Select: lambda sel: (str(sel), json.dumps(sel.compile().params, sort_keys=True)),
+    CTE: lambda sel: (str(sel), sel.compile().params),
+    Select: lambda sel: (str(sel), sel.compile().params),
     "streamlit_sql.read_cte.ColFilter": lambda cl: (cl.dt_filters, cl.no_dt_filters),
 }
 

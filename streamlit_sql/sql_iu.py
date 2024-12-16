@@ -86,21 +86,8 @@ def show_sql_ui(
     )
     filter_container = header_container.container()
 
-    create_col, saldo_toggle_col, saldo_value_col = header_container.columns([3, 3, 6])
-
-    create_btn = create_col.button(
-        f"",
-        type="primary",
-        icon=":material/add:",
-        key=f"{base_key}_create_btn",
-    )
-    if create_btn:
-        create_row = update_model.CreateRow(
-            conn=conn,
-            Model=edit_create_model,
-            default_values=edit_create_default_values,
-        )
-        create_row.show_dialog()
+    saldo_toggle_col, saldo_value_col = header_container.columns(2)
+    btns_container = header_container.container()
 
     if ss.stsql_update_ok is True:
         header_container.success(ss.stsql_update_message, icon=":material/thumb_up:")
@@ -195,13 +182,28 @@ def show_sql_ui(
         hide_index=True,
         column_order=column_order,
         on_select="rerun",
-        selection_mode="single-row",
+        selection_mode="multi-row",
         key=f"{base_key}_df_sql_ui",
     )
 
-    selected_row = lib.get_row_index(selection_state)
-    if not ss.stsql_opened and selected_row is not None:
-        row_id = int(df.iloc[selected_row]["id"])
+    rows_pos = []
+    if "selection" in selection_state and "rows" in selection_state["selection"]:
+        rows_pos = selection_state["selection"]["rows"]
+
+    qtty_rows = len(rows_pos)
+
+    action = update_model.action_btns(btns_container, qtty_rows, ss.stsql_opened)
+
+    if action == "add":
+        create_row = update_model.CreateRow(
+            conn=conn,
+            Model=edit_create_model,
+            default_values=edit_create_default_values,
+        )
+        create_row.show_dialog()
+    elif action == "edit":
+        selected_pos = rows_pos[0]
+        row_id = int(df.iloc[selected_pos]["id"])
         update_row = update_model.UpdateRow(
             conn=conn,
             Model=edit_create_model,
@@ -209,6 +211,15 @@ def show_sql_ui(
             default_values=edit_create_default_values,
         )
         update_row.show_dialog()
+    elif action == "delete":
+        rows_id = df.iloc[rows_pos].id.astype(int).to_list()
+        delete_rows = update_model.DeleteRows(
+            conn=conn,
+            Model=edit_create_model,
+            rows_id=rows_id,
+        )
+        delete_rows.show_dialog()
+        pass
 
     ss.stsql_opened = False
-    return df
+    return df, rows_pos
