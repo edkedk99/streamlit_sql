@@ -346,6 +346,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Basic Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interface
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -496,6 +511,21 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Basic Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#interface" class="md-nav__link">
+    <span class="md-ellipsis">
+      Interface
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -544,7 +574,6 @@
 <ul>
 <li>Display as a regular st.dataframe</li>
 <li>Add pagination, displaying only a set of rows each time</li>
-<li>Display the string representation of a ForeignKey column (Using <strong>str</strong> method), instead of its id number</li>
 <li>Set the dataframe to be displayed using standard sqlalchemy select statement, where you can JOIN, ORDER BY, WHERE, etc.</li>
 <li>Add a column to show the rolling sum of a numeric column</li>
 </ul>
@@ -576,7 +605,7 @@
 <p>Install the package using pip:</p>
 <pre><code class="language-bash">pip install streamlit_sql
 </code></pre>
-<p>Define a ModelOpts and add it to the argument of <em>show_sql_ui</em> function:</p>
+<p>Run <code>show_sql_ui</code> as the example below:</p>
 <pre><code class="language-python">from streamlit_sql import show_sql_ui
 from sqlalchemy import select
 
@@ -603,6 +632,13 @@ show_sql_ui(conn=conn,
 
 show_sql_ui(conn, model_opts)
 </code></pre>
+<h3 id="interface">Interface<a class="headerlink" href="#interface" title="Permanent link">#</a></h3>
+<ul>
+<li>Filter: Open the "Filter" expander and fill the inputs</li>
+<li>Add row: Click on "plus" button (no dataframe row can be selected)</li>
+<li>Edit row: Click on "pencil" button (one and only one dataframe row should be selected)</li>
+<li>Delete row: Click on "trash" button (one or more dataframe rows should be selected)</li>
+</ul>
 <h2 id="customize">Customize<a class="headerlink" href="#customize" title="Permanent link">#</a></h2>
 <p>You can adjust the CRUD interface by the select statement you provide to <em>read_instance</em> arg and giving optional arguments to the <em>show_sql_ui</em> function. See the docstring for more information or at <a href="https://edkedk99.github.io/streamlit_sql/api/#streamlit_sql.show_sql_ui">documentation webpage</a>:</p>
 <h2 id="only-create-or-update-form">Only create or update form<a class="headerlink" href="#only-create-or-update-form" title="Permanent link">#</a></h2>
