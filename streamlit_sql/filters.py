@@ -26,10 +26,12 @@ class ExistingData:
         session: Session,
         Model: Type[DeclarativeBase],
         default_values: dict,
+        row: DeclarativeBase | None = None,
     ) -> None:
         self.session = session
         self.Model = Model
         self.default_values = default_values
+        self.row = row
 
         self.cols = Model.__table__.columns
         reg_values: Any = Model.registry._class_registry.values()
@@ -53,7 +55,13 @@ class ExistingData:
         stmt = select(distinct(column)).select_from(self.Model).limit(10000)
         stmt = self.add_default_where(stmt)
 
-        opts = self.session.execute(stmt).scalars().all()
+        opts = list(self.session.execute(stmt).scalars().all())
+        row_value = None
+        if self.row:
+            row_value: str | None = getattr(self.row, col_name)
+        if row_value is not None and row_value not in opts:
+            opts.append(row_value)
+
         return opts
 
     @st.cache_data
@@ -102,6 +110,13 @@ class ExistingData:
         rows = self.session.execute(stmt).scalars()
 
         opts = [self.get_foreign_opt(row, fk_pk_name) for row in rows]
+
+        opt_row = None
+        if self.row is not None:
+            opt_row = self.get_foreign_opt(self.row, fk_pk_name)
+        if opt_row and opt_row not in opts:
+            opts.append(opt_row)
+
         opts_idxs = {opt.idx: opt for opt in opts}
         opts_unique = list(opts_idxs.values())
         return opts

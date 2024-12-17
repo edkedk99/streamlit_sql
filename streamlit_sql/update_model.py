@@ -1,9 +1,8 @@
 from datetime import date
 
 import streamlit as st
-from sqlalchemy import select, update, delete
+from sqlalchemy import delete, select, update
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
 from streamlit import session_state as ss
 from streamlit.connections.sql_connection import SQLConnection
@@ -12,7 +11,6 @@ from streamlit_datalist import stDatalist
 
 from streamlit_sql.filters import ExistingData
 from streamlit_sql.lib import get_pretty_name, set_state
-import streamlit_antd_components as sac
 
 
 def update_state(status: bool, msg: str):
@@ -26,22 +24,17 @@ def update_state(status: bool, msg: str):
 class InputFields:
     def __init__(
         self,
-        session: Session,
         Model: type[DeclarativeBase],
         key_prefix: str,
         default_values: dict,
+        existing_data: ExistingData,
     ) -> None:
-        self.session = session
         self.Model = Model
         self.key_prefix = key_prefix
         self.default_values = default_values
+        self.existing_data = existing_data
 
         table_name = self.Model.__tablename__
-        self.existing_data = ExistingData(
-            session=session,
-            Model=Model,
-            default_values=default_values,
-        )
 
     def input_fk(self, col_name: str, value: int | None):
         key = f"{self.key_prefix}_{col_name}"
@@ -59,16 +52,23 @@ class InputFields:
             return
         return input_value.idx
 
+    def get_col_str_opts(self, col_name: str, value: str | None):
+        opts = list(self.existing_data.text[col_name])
+        if value is None:
+            return None, opts
+
+        try:
+            val_index = opts.index(value)
+            return val_index, opts
+        except ValueError:
+            opts.append(value)
+            val_index = len(opts) - 1
+            return val_index, opts
+
     def input_str(self, col_name: str, value=None):
         key = f"{self.key_prefix}_{col_name}"
-        opts = self.existing_data.text[col_name]
-
-        if value:
-            val_index = opts.index(value)
-            input_value = stDatalist(col_name, list(opts), index=val_index, key=key)
-        else:
-            input_value = stDatalist(col_name, list(opts), key=key)
-
+        val_index, opts = self.get_col_str_opts(col_name, value)
+        input_value = stDatalist(col_name, list(opts), index=val_index, key=key)  # pyright: ignore
         result = str(input_value)
         return result
 
@@ -114,7 +114,11 @@ class UpdateRow:
 
         with conn.session as s:
             self.row = s.get_one(Model, row_id)
-            self.input_fields = InputFields(s, Model, "update", default_values)
+            self.existing_data = ExistingData(s, Model, default_values, self.row)
+
+        self.input_fields = InputFields(
+            Model, "update", default_values, self.existing_data
+        )
 
     def get_updates(self):
         cols = self.Model.__table__.columns
@@ -126,7 +130,7 @@ class UpdateRow:
             default_value = self.default_values.get(col_name)
 
             if default_value:
-                input_value = default_value
+                input_value = col_value
             else:
                 input_value = self.input_fields.get_input_value(col, col_value)
 
@@ -217,7 +221,10 @@ class CreateRow:
         set_state("stsql_updated", 0)
 
         with conn.session as s:
-            self.input_fields = InputFields(s, Model, "create", default_values)
+            self.existing_data = ExistingData(s, Model, default_values)
+            self.input_fields = InputFields(
+                Model, "create", default_values, self.existing_data
+            )
 
     def get_fields(self):
         cols = self.Model.__table__.columns
