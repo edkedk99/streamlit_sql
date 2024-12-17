@@ -10,8 +10,8 @@ from sqlalchemy.sql.elements import KeyedColumnElement
 from sqlalchemy.sql.expression import literal_column
 from streamlit.connections.sql_connection import SQLConnection
 from streamlit.delta_generator import DeltaGenerator
-import json
-from streamlit_sql.lib import get_pretty_name, set_state
+
+from streamlit_sql.lib import get_pretty_name
 
 hash_funcs: dict[Any, Callable[[Any], Any]] = {
     pd.Series: lambda serie: serie.to_dict(),

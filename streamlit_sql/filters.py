@@ -4,7 +4,7 @@ from typing import Any, Sequence, Type
 
 import streamlit as st
 from dateutil.relativedelta import relativedelta
-from sqlalchemy import Select, distinct, func, select
+from sqlalchemy import distinct, func, select
 from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
@@ -38,14 +38,20 @@ class ExistingData:
         self._models = [reg for reg in reg_values if hasattr(reg, "__tablename__")]
 
         table_name = Model.__tablename__
-
         self.text = self.get_text(table_name, ss.stsql_updated)
         self.dt = self.get_dt(table_name, ss.stsql_updated)
         self.fk = self.get_fk(table_name, ss.stsql_updated)
 
-    def add_default_where(self, stmt: Select):
-        for colname, value in self.default_values.items():
-            default_col = self.cols.get(colname)
+    def add_default_where(self, stmt, model: type[DeclarativeBase]):
+        cols = model.__table__.columns
+        default_values = {
+            colname: value
+            for colname, value in self.default_values.items()
+            if colname in cols
+        }
+
+        for colname, value in default_values.items():
+            default_col = cols.get(colname)
             stmt = stmt.where(default_col == value)
 
         return stmt
@@ -53,7 +59,7 @@ class ExistingData:
     def _get_str_opts(self, column) -> Sequence[str]:
         col_name = column.name
         stmt = select(distinct(column)).select_from(self.Model).limit(10000)
-        stmt = self.add_default_where(stmt)
+        stmt = self.add_default_where(stmt, self.Model)
 
         opts = list(self.session.execute(stmt).scalars().all())
         row_value = None
@@ -99,13 +105,12 @@ class ExistingData:
             reg for reg in self._models if reg.__tablename__ == foreign_table_name
         )
         fk_pk_name = foreign_key.column.description
-
         stmt = select(model).distinct()
 
         if col.table.name != foreign_key.column.table.name:
-            stmt = stmt.join(self.Model, col == foreign_key.column)
+            stmt = stmt.outerjoin(self.Model, col == foreign_key.column)
 
-        stmt = self.add_default_where(stmt)
+        stmt = self.add_default_where(stmt, model)
 
         rows = self.session.execute(stmt).scalars()
 

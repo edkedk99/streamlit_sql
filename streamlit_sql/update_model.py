@@ -68,7 +68,12 @@ class InputFields:
     def input_str(self, col_name: str, value=None):
         key = f"{self.key_prefix}_{col_name}"
         val_index, opts = self.get_col_str_opts(col_name, value)
-        input_value = stDatalist(col_name, list(opts), index=val_index, key=key)  # pyright: ignore
+        input_value = stDatalist(
+            col_name,
+            list(opts),
+            index=val_index,  # pyright: ignore
+            key=key,
+        )
         result = str(input_value)
         return result
 
@@ -156,18 +161,6 @@ class UpdateRow:
             except Exception as e:
                 return False, str(e)
 
-    def delete(self, idx: int):
-        with self.conn.session as s:
-            stmt = select(self.Model).where(self.Model.id == idx)  # pyright: ignore
-            row = s.execute(stmt).scalar_one()
-            row_str = str(row)
-            try:
-                s.delete(row)
-                s.commit()
-                return True, f"Deletado com sucesso {row_str}"
-            except Exception as e:
-                return False, str(e)
-
     def show(self):
         msg_container = st.empty()
 
@@ -177,14 +170,9 @@ class UpdateRow:
             updated = self.get_updates()
             update_btn = st.form_submit_button("Save")
 
-        del_btn = st.button("Delete", key="delete_btn", type="primary")
-
         if update_btn:
             ss.stsql_updated += 1
             return self.save(updated)
-        elif del_btn:
-            ss.stsql_updated += 1
-            return self.delete(self.row_id)
         else:
             return None, None
 
