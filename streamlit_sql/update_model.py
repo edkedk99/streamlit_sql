@@ -305,7 +305,10 @@ class DeleteRows:
             stmt_del = delete(self.Model).where(id_col.in_(self.rows_id))
             with self.conn.session as s:
                 try:
-                    s.execute(stmt_del)
+                    for row_id in self.rows_id:
+                        lanc = s.get(self.Model, row_id)
+                        s.delete(lanc)
+
                     s.commit()
                     ss.stsql_updated += 1
                     qtty = len(self.rows_id)

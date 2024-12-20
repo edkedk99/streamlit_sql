@@ -1,3 +1,5 @@
+from typing import Callable
+
 import pandas as pd
 import streamlit as st
 from sqlalchemy import CTE, Select, select
@@ -20,6 +22,7 @@ def show_sql_ui(
     read_use_container_width: bool = False,
     hide_id: bool = True,
     base_key: str = "",
+    style_fn: Callable[[pd.Series], list[str]] | None = None,
 ):
     """Show A CRUD interface in a Streamlit Page
 
@@ -32,6 +35,10 @@ def show_sql_ui(
         read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False
         hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True
         base_key (str, optional): A prefix to add to widget's key argument.
+        style_fn (Callable[[pd.Series], list[str]], optional): A function that style the DataFrame that receives the a Series representing a DataFrame row as argument and should return a list of string with the css property of the size of the number of columns of the DataFrame
+
+    Returns:
+        tuple[pd.DataFrame, list[int]]: A Tuple with the DataFrame displayed as first item and a list of rows numbers selected as second item.
 
     Examples:
         ```python
@@ -175,8 +182,12 @@ def show_sql_ui(
     if hide_id:
         column_order = [colname for colname in df.columns if colname != "id"]
 
+    df_style = df
+    if style_fn is not None:
+        df_style = df.style.apply(style_fn, axis=1)
+
     selection_state = data_container.dataframe(
-        df,
+        df_style,
         use_container_width=read_use_container_width,
         height=650,
         hide_index=True,
