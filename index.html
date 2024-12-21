@@ -317,9 +317,27 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#create-update-delete" class="md-nav__link">
+  <a href="#update" class="md-nav__link">
     <span class="md-ellipsis">
-      CREATE / UPDATE / DELETE
+      UPDATE
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create" class="md-nav__link">
+    <span class="md-ellipsis">
+      CREATE
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete" class="md-nav__link">
+    <span class="md-ellipsis">
+      DELETE
     </span>
   </a>
   
@@ -482,9 +500,27 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#create-update-delete" class="md-nav__link">
+  <a href="#update" class="md-nav__link">
     <span class="md-ellipsis">
-      CREATE / UPDATE / DELETE
+      UPDATE
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#create" class="md-nav__link">
+    <span class="md-ellipsis">
+      CREATE
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#delete" class="md-nav__link">
+    <span class="md-ellipsis">
+      DELETE
     </span>
   </a>
   
@@ -576,6 +612,7 @@
 <li>Add pagination, displaying only a set of rows each time</li>
 <li>Set the dataframe to be displayed using standard sqlalchemy select statement, where you can JOIN, ORDER BY, WHERE, etc.</li>
 <li>Add a column to show the rolling sum of a numeric column</li>
+<li>Conditional styling if the DataFrame based on each row value. For instance, changing its background color</li>
 </ul>
 <h3 id="filter">FILTER<a class="headerlink" href="#filter" title="Permanent link">#</a></h3>
 <ul>
@@ -584,14 +621,23 @@
 <li>Give possible candidates when filtering using existing values for the columns</li>
 <li>Let users select ForeignKey's values using the string representation of the foreign table, instead of its id number</li>
 </ul>
-<h3 id="create-update-delete">CREATE / UPDATE / DELETE<a class="headerlink" href="#create-update-delete" title="Permanent link">#</a></h3>
+<h3 id="update">UPDATE<a class="headerlink" href="#update" title="Permanent link">#</a></h3>
 <ul>
-<li>Users create new rows with a dialog opened by clicking the create button</li>
-<li>Users update rows with a dialog opened by clicking on desired row</li>
+<li>Users update rows with a dialog opened by selecting the row and clicking the icon</li>
 <li>Text columns offers candidates from existing values</li>
 <li>ForeignKey columns are added by the string representation instead of its id number</li>
+<li>In Update form, list all ONE-TO-MANY related rows with pagination, where you can directly create and delete related table rows. </li>
+</ul>
+<h3 id="create">CREATE<a class="headerlink" href="#create" title="Permanent link">#</a></h3>
+<ul>
+<li>Users create new rows with a dialog opened by clicking the create button</li>
+<li>Text columns offers candidates from existing values</li>
 <li>Hide columns to fill by offering default values</li>
-<li>Delete button in the UPDATE field</li>
+<li>ForeignKey columns are added by the string representation instead of its id number</li>
+</ul>
+<h3 id="delete">DELETE<a class="headerlink" href="#delete" title="Permanent link">#</a></h3>
+<ul>
+<li>Delete one or multiple rows by selecting in DataFrame and clicking the corresponding button. I dialog will list selected rows and confirm deletion.</li>
 </ul>
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">#</a></h2>
 <p>All the requirements you should probably have anyway.</p>
@@ -603,35 +649,39 @@
 </ol>
 <h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">#</a></h2>
 <p>Install the package using pip:</p>
-<pre><code class="language-bash">pip install streamlit_sql
-</code></pre>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>streamlit_sql
+</code></pre></div>
 <p>Run <code>show_sql_ui</code> as the example below:</p>
-<pre><code class="language-python">from streamlit_sql import show_sql_ui
-from sqlalchemy import select
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">streamlit_sql</span> <span class="kn">import</span> <span class="n">show_sql_ui</span>
+<span class="kn">from</span> <span class="nn">sqlalchemy</span> <span class="kn">import</span> <span class="n">select</span>
 
-conn = st.connection(&quot;sql&quot;, url=&quot;&lt;db_url&gt;&quot;)
+<span class="n">conn</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">connection</span><span class="p">(</span><span class="s2">&quot;sql&quot;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="s2">&quot;&lt;db_url&gt;&quot;</span><span class="p">)</span>
 
-stmt = (
-    select(
-        db.Invoice.id,
-        db.Invoice.Date,
-        db.Invoice.amount,
-        db.Client.name,
-    )
-    .join(db.Client)
-    .where(db.Invoice.amount &gt; 1000)
-    .order_by(db.Invoice.date)
-)
+<span class="n">stmt</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">select</span><span class="p">(</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">Invoice</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">Invoice</span><span class="o">.</span><span class="n">Date</span><span class="p">,</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">Invoice</span><span class="o">.</span><span class="n">amount</span><span class="p">,</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">Client</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Client</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Invoice</span><span class="o">.</span><span class="n">amount</span> <span class="o">&gt;</span> <span class="mi">1000</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">Invoice</span><span class="o">.</span><span class="n">date</span><span class="p">)</span>
+<span class="p">)</span>
 
-show_sql_ui(conn=conn,
-            read_instance=stmt,
-            edit_create_model=db.Invoice,
-            available_filter=[&quot;name&quot;],
-            rolling_total_column=&quot;amount&quot;,
-)
+<span class="n">show_sql_ui</span><span class="p">(</span><span class="n">conn</span><span class="o">=</span><span class="n">conn</span><span class="p">,</span>
+            <span class="n">read_instance</span><span class="o">=</span><span class="n">stmt</span><span class="p">,</span>
+            <span class="n">edit_create_model</span><span class="o">=</span><span class="n">db</span><span class="o">.</span><span class="n">Invoice</span><span class="p">,</span>
+            <span class="n">available_filter</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+            <span class="n">rolling_total_column</span><span class="o">=</span><span class="s2">&quot;amount&quot;</span><span class="p">,</span>
+<span class="p">)</span>
 
-show_sql_ui(conn, model_opts)
-</code></pre>
+<span class="n">show_sql_ui</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">model_opts</span><span class="p">)</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>In the statement, <strong>always</strong> include the primary_key column, that should be named <em>id</em></p>
+</div>
 <h3 id="interface">Interface<a class="headerlink" href="#interface" title="Permanent link">#</a></h3>
 <ul>
 <li>Filter: Open the "Filter" expander and fill the inputs</li>

@@ -534,8 +534,7 @@
 
             <details class="quote">
               <summary>Source code in <code>streamlit_sql/__init__.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">11</span>
-<span class="normal">12</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">12</span>
 <span class="normal">13</span>
 <span class="normal">14</span>
 <span class="normal">15</span>
@@ -555,7 +554,8 @@
 <span class="normal">29</span>
 <span class="normal">30</span>
 <span class="normal">31</span>
-<span class="normal">32</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">show_create</span><span class="p">(</span>
+<span class="normal">32</span>
+<span class="normal">33</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">show_create</span><span class="p">(</span>
     <span class="n">conn</span><span class="p">:</span> <span class="n">SQLConnection</span><span class="p">,</span>
     <span class="n">Model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">DeclarativeBase</span><span class="p">],</span>
     <span class="n">default_values</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(),</span>
@@ -587,7 +587,7 @@
 
 
 <h2 id="streamlit_sql.show_sql_ui" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">show_sql_ui</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">read_instance</span><span class="p">,</span> <span class="n">edit_create_model</span><span class="p">,</span> <span class="n">available_filter</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="n">edit_create_default_values</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span> <span class="n">rolling_total_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">read_use_container_width</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">hide_id</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">base_key</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">style_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">show_sql_ui</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">read_instance</span><span class="p">,</span> <span class="n">edit_create_model</span><span class="p">,</span> <span class="n">available_filter</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="n">edit_create_default_values</span><span class="o">=</span><span class="nb">dict</span><span class="p">(),</span> <span class="n">rolling_total_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">read_use_container_width</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">hide_id</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">base_key</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">style_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">update_show_many</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 <a href="#streamlit_sql.show_sql_ui" class="headerlink" title="Permanent link">#</a></h2>
 
@@ -771,7 +771,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A Tuple with the DataFrame displayed as first item and a list of rows numbers selected as second item. If the DataFrame is empty, returns None.</p>
+                <p>tuple[pd.DataFrame, list[int]]: A Tuple with the DataFrame displayed as first item and a list of rows numbers selected as second item.</p>
               </div>
             </td>
           </tr>
@@ -780,9 +780,9 @@
 
 
 <p><span class="doc-section-title">Examples:</span></p>
-    <pre><code class="language-python">conn = st.connection(&quot;sql&quot;, db_url)
-
-stmt = (
+    <p>```python
+conn = st.connection("sql", db_url)</p>
+<p>stmt = (
     select(
         db.Invoice.id,
         db.Invoice.Date,
@@ -790,17 +790,17 @@ stmt = (
         db.Client.name,
     )
     .join(db.Client)
-    .where(db.Invoice.amount &gt; 1000)
-    .order_by(db.Invoice.date)
-)
-
-show_sql_ui(conn=conn,
+    .where(db.Invoice.amount &gt; 1000)</p>
+        <p>.       .order_by(db.Invoice.date)
+    )</p>
+<pre><code>show_sql_ui(conn=conn,
             read_instance=stmt,
             edit_create_model=db.Invoice,
-            available_filter=[&quot;name&quot;],
-            rolling_total_column=&quot;amount&quot;,
+            available_filter=["name"],
+            rolling_total_column="amount",
 )
 
+```
 </code></pre>
 
             <details class="quote">
@@ -1026,7 +1026,9 @@ show_sql_ui(conn=conn,
 <span class="normal">233</span>
 <span class="normal">234</span>
 <span class="normal">235</span>
-<span class="normal">236</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">show_sql_ui</span><span class="p">(</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">show_sql_ui</span><span class="p">(</span>
     <span class="n">conn</span><span class="p">:</span> <span class="n">SQLConnection</span><span class="p">,</span>
     <span class="n">read_instance</span><span class="p">,</span>
     <span class="n">edit_create_model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">DeclarativeBase</span><span class="p">],</span>
@@ -1037,6 +1039,7 @@ show_sql_ui(conn=conn,
     <span class="n">hide_id</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">base_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
     <span class="n">style_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">update_show_many</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Show A CRUD interface in a Streamlit Page</span>
 
@@ -1052,7 +1055,7 @@ show_sql_ui(conn=conn,
 <span class="sd">        style_fn (Callable[[pd.Series], list[str]], optional): A function that style the DataFrame that receives the a Series representing a DataFrame row as argument and should return a list of string with the css property of the size of the number of columns of the DataFrame</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A Tuple with the DataFrame displayed as first item and a list of rows numbers selected as second item. If the DataFrame is empty, returns None.</span>
+<span class="sd">        tuple[pd.DataFrame, list[int]]: A Tuple with the DataFrame displayed as first item and a list of rows numbers selected as second item.</span>
 
 <span class="sd">    Examples:</span>
 <span class="sd">        ```python</span>
@@ -1067,7 +1070,7 @@ show_sql_ui(conn=conn,
 <span class="sd">            )</span>
 <span class="sd">            .join(db.Client)</span>
 <span class="sd">            .where(db.Invoice.amount &gt; 1000)</span>
-<span class="sd">            .order_by(db.Invoice.date)</span>
+<span class="sd">    .       .order_by(db.Invoice.date)</span>
 <span class="sd">        )</span>
 
 <span class="sd">        show_sql_ui(conn=conn,</span>
@@ -1220,7 +1223,7 @@ show_sql_ui(conn=conn,
     <span class="n">action</span> <span class="o">=</span> <span class="n">update_model</span><span class="o">.</span><span class="n">action_btns</span><span class="p">(</span><span class="n">btns_container</span><span class="p">,</span> <span class="n">qtty_rows</span><span class="p">,</span> <span class="n">ss</span><span class="o">.</span><span class="n">stsql_opened</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;add&quot;</span><span class="p">:</span>
-        <span class="n">create_row</span> <span class="o">=</span> <span class="n">update_model</span><span class="o">.</span><span class="n">CreateRow</span><span class="p">(</span>
+        <span class="n">create_row</span> <span class="o">=</span> <span class="n">create_delete_model</span><span class="o">.</span><span class="n">CreateRow</span><span class="p">(</span>
             <span class="n">conn</span><span class="o">=</span><span class="n">conn</span><span class="p">,</span>
             <span class="n">Model</span><span class="o">=</span><span class="n">edit_create_model</span><span class="p">,</span>
             <span class="n">default_values</span><span class="o">=</span><span class="n">edit_create_default_values</span><span class="p">,</span>
@@ -1234,11 +1237,12 @@ show_sql_ui(conn=conn,
             <span class="n">Model</span><span class="o">=</span><span class="n">edit_create_model</span><span class="p">,</span>
             <span class="n">row_id</span><span class="o">=</span><span class="n">row_id</span><span class="p">,</span>
             <span class="n">default_values</span><span class="o">=</span><span class="n">edit_create_default_values</span><span class="p">,</span>
+            <span class="n">update_show_many</span><span class="o">=</span><span class="n">update_show_many</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">update_row</span><span class="o">.</span><span class="n">show_dialog</span><span class="p">()</span>
     <span class="k">elif</span> <span class="n">action</span> <span class="o">==</span> <span class="s2">&quot;delete&quot;</span><span class="p">:</span>
         <span class="n">rows_id</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">rows_pos</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
-        <span class="n">delete_rows</span> <span class="o">=</span> <span class="n">update_model</span><span class="o">.</span><span class="n">DeleteRows</span><span class="p">(</span>
+        <span class="n">delete_rows</span> <span class="o">=</span> <span class="n">create_delete_model</span><span class="o">.</span><span class="n">DeleteRows</span><span class="p">(</span>
             <span class="n">conn</span><span class="o">=</span><span class="n">conn</span><span class="p">,</span>
             <span class="n">Model</span><span class="o">=</span><span class="n">edit_create_model</span><span class="p">,</span>
             <span class="n">rows_id</span><span class="o">=</span><span class="n">rows_id</span><span class="p">,</span>
@@ -1333,8 +1337,7 @@ show_sql_ui(conn=conn,
 
             <details class="quote">
               <summary>Source code in <code>streamlit_sql/__init__.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">35</span>
-<span class="normal">36</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">36</span>
 <span class="normal">37</span>
 <span class="normal">38</span>
 <span class="normal">39</span>
@@ -1355,7 +1358,8 @@ show_sql_ui(conn=conn,
 <span class="normal">54</span>
 <span class="normal">55</span>
 <span class="normal">56</span>
-<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">show_update</span><span class="p">(</span>
+<span class="normal">57</span>
+<span class="normal">58</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">show_update</span><span class="p">(</span>
     <span class="n">conn</span><span class="p">:</span> <span class="n">SQLConnection</span><span class="p">,</span>
     <span class="n">Model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">DeclarativeBase</span><span class="p">],</span>
     <span class="n">row_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
