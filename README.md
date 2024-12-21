@@ -16,6 +16,7 @@ See the package in action [here](https://example-crud.streamlit.app/).
 - Add pagination, displaying only a set of rows each time
 - Set the dataframe to be displayed using standard sqlalchemy select statement, where you can JOIN, ORDER BY, WHERE, etc.
 - Add a column to show the rolling sum of a numeric column
+- Conditional styling if the DataFrame based on each row value. For instance, changing its background color
 
 ### FILTER
 
@@ -24,14 +25,26 @@ See the package in action [here](https://example-crud.streamlit.app/).
 - Give possible candidates when filtering using existing values for the columns
 - Let users select ForeignKey's values using the string representation of the foreign table, instead of its id number
 
-### CREATE / UPDATE / DELETE
+### UPDATE
 
-- Users create new rows with a dialog opened by clicking the create button
-- Users update rows with a dialog opened by clicking on desired row
+- Users update rows with a dialog opened by selecting the row and clicking the icon
 - Text columns offers candidates from existing values
 - ForeignKey columns are added by the string representation instead of its id number
+- In Update form, list all ONE-TO-MANY related rows with pagination, where you can directly create and delete related table rows. 
+
+
+### CREATE
+
+- Users create new rows with a dialog opened by clicking the create button
+- Text columns offers candidates from existing values
 - Hide columns to fill by offering default values
-- Delete button in the UPDATE field
+- ForeignKey columns are added by the string representation instead of its id number
+
+### DELETE
+
+- Delete one or multiple rows by selecting in DataFrame and clicking the corresponding button. I dialog will list selected rows and confirm deletion.
+
+
 
 ## Requirements
 
@@ -80,6 +93,9 @@ show_sql_ui(conn=conn,
 
 show_sql_ui(conn, model_opts)
 ```
+
+!!! warning
+    In the statement, **always** include the primary_key column, that should be named *id*
 
 ### Interface
 

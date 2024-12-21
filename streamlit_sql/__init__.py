@@ -1,9 +1,10 @@
 from sqlalchemy.orm import DeclarativeBase
 from streamlit.connections import SQLConnection
 
+from streamlit_sql.create_delete_model import CreateRow
 from streamlit_sql.lib import get_pretty_name
 from streamlit_sql.sql_iu import show_sql_ui
-from streamlit_sql.update_model import CreateRow, UpdateRow
+from streamlit_sql.update_model import UpdateRow
 
 __all__ = ["show_sql_ui", "show_create"]
 

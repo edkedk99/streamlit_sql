@@ -7,7 +7,7 @@ from sqlalchemy.orm import DeclarativeBase
 from streamlit import session_state as ss
 from streamlit.connections import SQLConnection
 
-from streamlit_sql import lib, read_cte, update_model
+from streamlit_sql import create_delete_model, lib, read_cte, update_model
 
 OPTS_ITEMS_PAGE = [50, 100, 200, 500, 1000]
 
@@ -23,7 +23,8 @@ def show_sql_ui(
     hide_id: bool = True,
     base_key: str = "",
     style_fn: Callable[[pd.Series], list[str]] | None = None,
-):
+    update_show_many: bool = False,
+) -> tuple[pd.DataFrame, list[int]] | None:
     """Show A CRUD interface in a Streamlit Page
 
     Args:
@@ -206,7 +207,7 @@ def show_sql_ui(
     action = update_model.action_btns(btns_container, qtty_rows, ss.stsql_opened)
 
     if action == "add":
-        create_row = update_model.CreateRow(
+        create_row = create_delete_model.CreateRow(
             conn=conn,
             Model=edit_create_model,
             default_values=edit_create_default_values,
@@ -220,11 +221,12 @@ def show_sql_ui(
             Model=edit_create_model,
             row_id=row_id,
             default_values=edit_create_default_values,
+            update_show_many=update_show_many,
         )
         update_row.show_dialog()
     elif action == "delete":
         rows_id = df.iloc[rows_pos].id.astype(int).to_list()
-        delete_rows = update_model.DeleteRows(
+        delete_rows = create_delete_model.DeleteRows(
             conn=conn,
             Model=edit_create_model,
             rows_id=rows_id,
