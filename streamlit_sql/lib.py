@@ -10,16 +10,18 @@ def set_state(key: str, value):
 
 def get_row_index(state: DataframeState | None):
     if not state:
-        return
+        return None
 
     selection = state.get("selection")
     if not selection:
-        return
+        return None
 
     rows = selection.get("rows")
     if rows:
         result = rows[0]
         return result
+
+    return None
 
 
 @st.cache_data

@@ -22,8 +22,6 @@ class InputFields:
         self.default_values = default_values
         self.existing_data = existing_data
 
-        table_name = self.Model.__tablename__
-
     def input_fk(self, col_name: str, value: int | None):
         key = f"{self.key_prefix}_{col_name}"
         opts = self.existing_data.fk[col_name]
@@ -37,7 +35,7 @@ class InputFields:
             key=key,
         )
         if not input_value:
-            return
+            return None
         return input_value.idx
 
     def get_col_str_opts(self, col_name: str, value: str | None):

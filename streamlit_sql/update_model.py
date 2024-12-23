@@ -17,28 +17,28 @@ class UpdateRow:
         conn: SQLConnection,
         Model: type[DeclarativeBase],
         row_id: int,
-        default_values: dict = dict(),
+        default_values: dict | None = None,
         update_show_many: bool = False,
     ) -> None:
         self.conn = conn
         self.Model = Model
         self.row_id = row_id
-        self.default_values = default_values
+        self.default_values = default_values or {}
         self.update_show_many = update_show_many
 
         set_state("stsql_updated", 0)
 
         with conn.session as s:
             self.row = s.get_one(Model, row_id)
-            self.existing_data = ExistingData(s, Model, default_values, self.row)
+            self.existing_data = ExistingData(s, Model, self.default_values, self.row)
 
         self.input_fields = InputFields(
-            Model, "update", default_values, self.existing_data
+            Model, "update", self.default_values, self.existing_data
         )
 
     def get_updates(self):
         cols = self.Model.__table__.columns
-        updated = dict()
+        updated = {}
         for col in cols:
             col_name = col.description
             assert col_name is not None
@@ -73,8 +73,6 @@ class UpdateRow:
                 return False, str(e)
 
     def show(self):
-        msg_container = st.empty()
-
         pretty_name = get_pretty_name(self.Model.__tablename__)
         st.subheader(pretty_name)
         with st.form(f"update_model_form_{pretty_name}", border=False):
@@ -82,13 +80,12 @@ class UpdateRow:
             update_btn = st.form_submit_button("Save")
 
         if self.update_show_many:
-            many.ShowRels(self.conn, self.Model, self.row_id)
+            many.show_rels(self.conn, self.Model, self.row_id)
 
         if update_btn:
             ss.stsql_updated += 1
             return self.save(updated)
-        else:
-            return None, None
+        return None, None
 
     def show_dialog(self):
         pretty_name = get_pretty_name(self.Model.__tablename__)
@@ -147,9 +144,11 @@ def action_btns(container: DeltaGenerator, qtty_selected: int, opened: bool):
 
         if opened:
             return None
-        elif add_btn:
+        if add_btn:
             return "add"
-        elif edit_btn:
+        if edit_btn:
             return "edit"
-        elif del_btn:
+        if del_btn:
             return "delete"
+
+        return None

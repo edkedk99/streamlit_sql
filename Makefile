@@ -22,17 +22,6 @@ define remote_command
 endef
 
 
-.PHONY: server
-server:
-	make build && \
-	scp "dist/$(wheel)" $(remote_server):$(remote_wheel_dir) && \
-	ssh $(remote_server) "pip3 uninstall -y $(pkg_name) && pip3 install $(remote_wheel_dir)/$(wheel)" && \
-	ssh pulsar "pip3 uninstall -y $(pkg_name) && pip3 install $(remote_wheel_dir)/$(wheel)"
-
-.PHONY: build
-build:
-	make fix && python -m build
-
 .PHONY: docker
 docker:
 	make fix && \
@@ -43,11 +32,13 @@ docker:
 
 .PHONY: fix
 fix:
-	source venv/bin/activate && \
-	pyright $(modules) && \
-	pycln -a $(modules) && \
-	isort --profile black $(modules) && \
-	black $(modules)
+	uv run -- pyright && \
+	uv run -- ruff check --fix && \
+	uv run -- ruff format
+
+.PHONY: st
+st:
+	uv run -- streamlit run app/webapp.py
 
 .PHONY: publish
 publish:

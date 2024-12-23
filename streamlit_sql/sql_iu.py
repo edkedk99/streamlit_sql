@@ -1,4 +1,4 @@
-from typing import Callable
+from collections.abc import Callable
 
 import pandas as pd
 import streamlit as st
@@ -9,15 +9,15 @@ from streamlit.connections import SQLConnection
 
 from streamlit_sql import create_delete_model, lib, read_cte, update_model
 
-OPTS_ITEMS_PAGE = [50, 100, 200, 500, 1000]
+OPTS_ITEMS_PAGE = (50, 100, 200, 500, 1000)
 
 
 def show_sql_ui(
     conn: SQLConnection,
     read_instance,
     edit_create_model: type[DeclarativeBase],
-    available_filter: list[str] = list(),
-    edit_create_default_values: dict = dict(),
+    available_filter: list[str] | None = None,
+    edit_create_default_values: dict | None = None,
     rolling_total_column: str | None = None,
     read_use_container_width: bool = False,
     hide_id: bool = True,
@@ -68,6 +68,12 @@ def show_sql_ui(
 
 
     """
+
+    if not available_filter:
+        available_filter = []
+
+    if not edit_create_default_values:
+        edit_create_default_values = {}
 
     if isinstance(read_instance, Select):
         cte = read_instance.cte()
@@ -175,7 +181,7 @@ def show_sql_ui(
 
     if df.empty:
         st.header(":red[Tabela Vazia]")
-        return
+        return None
 
     df.columns = df.columns.astype("str")
 
@@ -232,7 +238,6 @@ def show_sql_ui(
             rows_id=rows_id,
         )
         delete_rows.show_dialog()
-        pass
 
     ss.stsql_opened = False
     return df, rows_pos

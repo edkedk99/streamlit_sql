@@ -1,5 +1,5 @@
 import streamlit as st
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
 from streamlit import session_state as ss
 from streamlit.connections.sql_connection import SQLConnection
@@ -14,25 +14,26 @@ class CreateRow:
         self,
         conn: SQLConnection,
         Model: type[DeclarativeBase],
-        default_values: dict = dict(),
+        default_values: dict | None = None,
         base_key: str = "create",
     ) -> None:
         self.conn = conn
         self.Model = Model
-        self.default_values = default_values
+
+        self.default_values = default_values or {}
         self.base_key = base_key
 
         set_state("stsql_updated", 0)
 
         with conn.session as s:
-            self.existing_data = ExistingData(s, Model, default_values)
+            self.existing_data = ExistingData(s, Model, self.default_values)
             self.input_fields = InputFields(
-                Model, base_key, default_values, self.existing_data
+                Model, base_key, self.default_values, self.existing_data
             )
 
     def get_fields(self):
         cols = self.Model.__table__.columns
-        created = dict()
+        created = {}
         for col in cols:
             col_name = col.description
             assert col_name is not None
@@ -116,14 +117,12 @@ class DeleteRows:
         st.subheader("Apagar items abaixo?")
 
         rows_str = self.get_rows_str(self.rows_id)
-        items = "\n\n".join(rows_str)
         st.dataframe({pretty_name: rows_str}, hide_index=True)
 
         btn = st.button("Delete", key=self.base_key)
         if btn:
             id_col = self.Model.__table__.columns.get("id")
             assert id_col is not None
-            stmt_del = delete(self.Model).where(id_col.in_(self.rows_id))
             with self.conn.session as s:
                 try:
                     for row_id in self.rows_id:

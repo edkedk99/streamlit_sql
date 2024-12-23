@@ -1,5 +1,6 @@
+from collections.abc import Callable
 from datetime import date
-from typing import Any, Callable
+from typing import Any
 
 import pandas as pd
 import streamlit as st
@@ -39,14 +40,17 @@ def get_existing_values(
     _session: Session,
     cte: CTE,
     updated: int,
-    available_col_filter: list[str] = list(),
+    available_col_filter: list[str] | None = None,
 ):
+    if not available_col_filter:
+        available_col_filter = []
+
     cols = list(cte.columns)
 
     if len(available_col_filter) > 0:
         cols = [col for col in cte.columns if get_existing_cond(col)]
 
-    result: dict[str, Any] = dict()
+    result: dict[str, Any] = {}
     for col in cols:
         stmt = select(distinct(col)).order_by(col)
         values = _session.execute(stmt).scalars().all()
@@ -63,13 +67,13 @@ class ColFilter:
         container: DeltaGenerator,
         cte: CTE,
         existing_values: dict[str, Any],
-        available_col_filter: list[str] = list(),
+        available_col_filter: list[str] | None = None,
         base_key: str = "",
     ) -> None:
         self.container = container
         self.cte = cte
         self.existing_values = existing_values
-        self.available_col_filter = available_col_filter
+        self.available_col_filter = available_col_filter or []
         self.base_key = base_key
 
         self.dt_filters = self.get_dt_filters()
@@ -101,7 +105,7 @@ class ColFilter:
             and col.type.python_type is date
         ]
 
-        result: dict[str, tuple[date | None, date | None]] = dict()
+        result: dict[str, tuple[date | None, date | None]] = {}
         for col in cols:
             colname = col.description
             assert colname is not None
@@ -141,7 +145,7 @@ class ColFilter:
             and col.type.python_type is not date
         ]
 
-        result: dict[str, str | None] = dict()
+        result: dict[str, str | None] = {}
         for col in cols:
             colname = col.description
             assert colname is not None
@@ -198,7 +202,7 @@ def get_qtty_rows(_conn: SQLConnection, stmt_no_pag: Select):
     return qtty
 
 
-def show_pagination(count: int, opts_items_page: list[int], base_key: str = ""):
+def show_pagination(count: int, opts_items_page: tuple[int, ...], base_key: str = ""):
     pag_col1, pag_col2 = st.columns([0.2, 0.8])
 
     first_item_candidates = [item for item in opts_items_page if item > count]

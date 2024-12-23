@@ -12,7 +12,7 @@ __all__ = ["show_sql_ui", "show_create"]
 def show_create(
     conn: SQLConnection,
     Model: type[DeclarativeBase],
-    default_values: dict = dict(),
+    default_values: dict | None = None,
 ):
     """Show a form to add a new row to the database table of the choosen sqlalchemy Model
 
@@ -24,6 +24,9 @@ def show_create(
         default_values (dict, optional): A dict with column name as keys and values to be default. The form will not display those columns and its value will be added to the Model object
 
     """
+    if default_values is None:
+        default_values = {}
+
     create_row = CreateRow(
         conn=conn,
         Model=Model,
@@ -37,7 +40,7 @@ def show_update(
     conn: SQLConnection,
     Model: type[DeclarativeBase],
     row_id: int,
-    default_values: dict = dict(),
+    default_values: dict | None = None,
 ):
     """Show a form to update or delete a row to the database table of the choosen sqlalchemy Model
 
@@ -49,6 +52,9 @@ def show_update(
         default_values (dict, optional): A dict with column name as keys and values to be default. The form will not display those columns and its value will be added to the Model object
 
     """
+    if default_values is None:
+        default_values = {}
+
     update_row = UpdateRow(
         conn=conn,
         Model=Model,

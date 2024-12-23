@@ -1,6 +1,7 @@
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import date
-from typing import Any, Sequence, Type
+from typing import Any
 
 import streamlit as st
 from dateutil.relativedelta import relativedelta
@@ -24,7 +25,7 @@ class ExistingData:
     def __init__(
         self,
         session: Session,
-        Model: Type[DeclarativeBase],
+        Model: type[DeclarativeBase],
         default_values: dict,
         row: DeclarativeBase | None = None,
     ) -> None:
@@ -122,15 +123,13 @@ class ExistingData:
         if opt_row and opt_row not in opts:
             opts.append(opt_row)
 
-        opts_idxs = {opt.idx: opt for opt in opts}
-        opts_unique = list(opts_idxs.values())
         return opts
 
     @st.cache_data
     def get_fk(_self, table_name: str, updated: int):
         fk_cols = [col for col in _self.cols if len(list(col.foreign_keys)) > 0]
         opts = {
-            col.description: _self.get_foreign_opts(col, list(col.foreign_keys)[0])
+            col.description: _self.get_foreign_opts(col, next(iter(col.foreign_keys)))
             for col in fk_cols
             if col.description
         }
@@ -142,12 +141,12 @@ class SidebarFilter:
         self,
         Model: type[DeclarativeBase],
         existing_data: ExistingData,
-        filter_by: list[tuple[InstrumentedAttribute, Any]] = [],
+        filter_by: list[tuple[InstrumentedAttribute, Any]] | None = None,
         available_sidebar_filter: list[str] | None = None,
     ) -> None:
         self.Model = Model
         self.opts = existing_data
-        self.filter_by = filter_by
+        self.filter_by = filter_by or []
         self.available_sidebar_filter = available_sidebar_filter
 
         self.table_name = Model.__tablename__

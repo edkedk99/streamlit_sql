@@ -1,5 +1,5 @@
 [tool.pyright]
-venvPath = "venv"
+venvPath = ".venv"
 venv = "."
 verboseOutput = false
 reportConstantRedefinition = "warning"
@@ -10,7 +10,8 @@ include = ["streamlit_sql"]
 exclude = ["**/node_modules",
     "**/__pycache__",
     "build/*",
-    "dist/*"]
+    "dist/*",
+    ".venv/*"]
 
 [build-system]
 requires = ["setuptools", "wheel"]
@@ -29,16 +30,17 @@ paths = ["streamlit_sql"]
 sort_by_size = true
 verbose = false
 
-[tool.isort]
-profile = "black"
-
 [tool.ruff]
 exclude = [".venv", "whitelist.py", "alembic", "alembic_dev"]
 line-length = 88
 
 [tool.ruff.lint]
-ignore = ["SIM108", "E501",]
-select = ["UP","YTT", "A", "EM", "ICN","I", "SIM", "E", "F401"]
+ignore = ["SIM108", "E501","PD901", "RET504", "PLR", "PTH123", "ISC001","ARG001","ARG002", "C901"]
+select = ["UP","YTT", "A", "EM", "ICN","I", "SIM", "E", "F", "C90", "B", "C4", "FA", "ISC", "INP", "PIE", "RET", "TID", "ARG", "PTH", "ERA", "PD", "PL", "FLY", "NPY", "PERF", "FURB", "RUF"]
+
+[tool.ruff.lint.pep8-naming]
+ignore-names = ["_self"]
+
 
 [metadata]
 description = "Streamlit SQL"
@@ -53,7 +55,7 @@ version = "0.2.4"
 description = "CRUD interface for sqlalchemy using streamlit"
 readme = "README.md"
 # readme= "docs/README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.13"
 license = {text = "MIT License"}
 dependencies = [
     "python-dateutil",
@@ -62,6 +64,21 @@ dependencies = [
     "streamlit",
     "streamlit_datalist",
     "streamlit_antd_components",
+]
+
+[dependency-groups]
+
+dev = [
+    "setuptools",
+    "ipython",
+    "build",
+    "rich",
+    "isort",
+    "vermin",
+    "pandas-stubs",
+    "vulture",
+    "pdbpp",
+    "pyright"
 ]
 
 [project.urls]
