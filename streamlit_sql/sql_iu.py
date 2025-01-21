@@ -68,7 +68,6 @@ def show_sql_ui(
 
 
     """
-
     if not available_filter:
         available_filter = []
 
@@ -86,6 +85,7 @@ def show_sql_ui(
     lib.set_state("stsql_update_ok", None)
     lib.set_state("stsql_update_message", None)
     lib.set_state("stsql_opened", False)
+    lib.set_state("stsql_qtty_rows", 0)
 
     header_container = st.container()
     data_container = st.container()
@@ -179,7 +179,18 @@ def show_sql_ui(
         rolling_col_name = f"Balance {rolling_pretty_name}"
         df[rolling_col_name] = df[rolling_total_column].cumsum() + initial_balance
 
+    action = update_model.action_btns(
+        btns_container, ss.stsql_qtty_rows, ss.stsql_opened
+    )
+
     if df.empty:
+        if action == "add":
+            create_row = create_delete_model.CreateRow(
+                conn=conn,
+                Model=edit_create_model,
+                default_values=edit_create_default_values,
+            )
+            create_row.show_dialog()
         st.header(":red[Tabela Vazia]")
         return None
 
@@ -208,9 +219,7 @@ def show_sql_ui(
     if "selection" in selection_state and "rows" in selection_state["selection"]:
         rows_pos = selection_state["selection"]["rows"]
 
-    qtty_rows = len(rows_pos)
-
-    action = update_model.action_btns(btns_container, qtty_rows, ss.stsql_opened)
+    ss.stsql_qtty_rows = len(rows_pos)
 
     if action == "add":
         create_row = create_delete_model.CreateRow(

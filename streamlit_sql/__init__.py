@@ -6,7 +6,7 @@ from streamlit_sql.lib import get_pretty_name
 from streamlit_sql.sql_iu import show_sql_ui
 from streamlit_sql.update_model import UpdateRow
 
-__all__ = ["show_sql_ui", "show_create"]
+__all__ = ["show_create", "show_sql_ui"]
 
 
 def show_create(
