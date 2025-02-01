@@ -78,10 +78,10 @@ class SqlUi:
         # Create UI
         col_filter = self.filter()
         stmt_no_pag = read_cte.get_stmt_no_pag(self.cte, col_filter)
+        initial_balance = self.get_initial_balance(stmt_no_pag, col_filter)
         qtty_rows = read_cte.get_qtty_rows(self.conn, stmt_no_pag)
         items_per_page, page = self.pagination(qtty_rows)
         stmt_pag = read_cte.get_stmt_pag(stmt_no_pag, items_per_page, page)
-        initial_balance = self.get_initial_balance(col_filter)
         df = self.get_df(stmt_pag, initial_balance)
         selection_state = self.show_df(df)
         rows_selected = self.get_rows_selected(selection_state)
@@ -180,7 +180,7 @@ class SqlUi:
 
         return items_per_page, page
 
-    def get_initial_balance(self, col_filter: read_cte.ColFilter):
+    def get_initial_balance(self, stmt_no_pag: Select, col_filter: read_cte.ColFilter):
         if self.rolling_total_column is None:
             return 0
 
@@ -193,9 +193,12 @@ class SqlUi:
         if not saldo_toogle:
             return 0
 
+        with self.conn.session as s:
+            first_row = s.execute(stmt_no_pag).first()
+
         first_row_id: int | None = None
-        if not self.df.empty:
-            first_row_id = int(self.df.iloc[0].id)
+        if first_row and isinstance(first_row.id, int):
+            first_row_id = first_row.id
 
         no_dt_filters = col_filter.no_dt_filters
         stmt_no_pag_dt = read_cte.get_stmt_no_pag_dt(self.cte, no_dt_filters)
