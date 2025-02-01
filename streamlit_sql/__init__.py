@@ -3,10 +3,10 @@ from streamlit.connections import SQLConnection
 
 from streamlit_sql.create_delete_model import CreateRow
 from streamlit_sql.lib import get_pretty_name
-from streamlit_sql.sql_iu import show_sql_ui
+from streamlit_sql.sql_iu import SqlUi, show_sql_ui
 from streamlit_sql.update_model import UpdateRow
 
-__all__ = ["show_create", "show_sql_ui"]
+__all__ = ["SqlUi", "show_create", "show_sql_ui"]
 
 
 def show_create(

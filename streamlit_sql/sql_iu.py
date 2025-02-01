@@ -14,6 +14,15 @@ OPTS_ITEMS_PAGE = (50, 100, 200, 500, 1000)
 
 
 class SqlUi:
+    """Show A CRUD interface in a Streamlit Page
+
+    See in __init__ method detailed descriptions of arguments and properties
+
+    It also offers the following properties:
+
+
+    """
+
     def __init__(
         self,
         conn: SQLConnection,
@@ -28,6 +37,24 @@ class SqlUi:
         style_fn: Callable[[pd.Series], list[str]] | None = None,
         update_show_many: bool = False,
     ):
+        """Init method
+
+        Arguments:
+            conn (SQLConnection): A sqlalchemy connection created with st.connection(\"sql\", url=\"<sqlalchemy url>\")
+            read_instance (Select | CTE | Model): The sqlalchemy select statement to display or a CTE. Choose columns to display , join, query or order.If selecting columns, you need to add the id column. If a Model, it will select all columns.
+            edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object
+            available_filter (list[str], optional): Define wich columns the user will be able to filter in the sidebar. Defaults to all
+            rolling_total_column (str, optional): A numeric column name of the Model. A new column will be displayed with the rolling sum of these column
+            read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False
+            hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True
+            base_key (str, optional): A prefix to add to widget's key argument.
+            style_fn (Callable[[pd.Series], list[str]], optional): A function that style the DataFrame that receives the a Series representing a DataFrame row as argument and should return a list of string with the css property of the size of the number of columns of the DataFrame
+
+        Attributes:
+            df (pd.Dataframe): The Dataframe displayed in the screen
+            selected_rows (list[int]): The position of selected rows. This is not the row id.
+            qtty_rows (int): The quantity of all rows after filtering
+        """
         self.conn = conn
         self.read_instance = read_instance
         self.edit_create_model = edit_create_model
@@ -43,23 +70,30 @@ class SqlUi:
         self.cte = self.get_cte()
         self.rolling_pretty_name = lib.get_pretty_name(self.rolling_total_column or "")
 
+        # Bootstrap
         self.set_initial_state()
         self.set_structure()
         self.notification()
 
-        self.col_filter = self.filter()
-        self.stmt_no_pag = read_cte.get_stmt_no_pag(self.cte, self.col_filter)
-        self.qtty_rows = read_cte.get_qtty_rows(self.conn, self.stmt_no_pag)
-        self.items_per_page, self.page = self.pagination()
-        self.df = self.get_df()
-        self.initial_balance = self.get_initial_balance()
-        self.df = self.add_balance_col(self.df)
+        # Create UI
+        col_filter = self.filter()
+        stmt_no_pag = read_cte.get_stmt_no_pag(self.cte, col_filter)
+        qtty_rows = read_cte.get_qtty_rows(self.conn, stmt_no_pag)
+        items_per_page, page = self.pagination(qtty_rows)
+        stmt_pag = read_cte.get_stmt_pag(stmt_no_pag, items_per_page, page)
+        initial_balance = self.get_initial_balance(col_filter)
+        df = self.get_df(stmt_pag, initial_balance)
+        selection_state = self.show_df(df)
+        rows_selected = self.get_rows_selected(selection_state)
 
-        selection_state = self.show_df()
-        self.rows_selected = self.get_rows_selected(selection_state)
-        self.crud()
-
+        # CRUD
+        self.crud(df, rows_selected)
         ss.stsql_opened = False
+
+        # Returns
+        self.df = df
+        self.rows_selected = rows_selected
+        self.qtty_rows = qtty_rows
 
     def set_initial_state(self):
         lib.set_state("stsql_updated", 1)
@@ -136,26 +170,17 @@ class SqlUi:
 
         return col_filter
 
-    def pagination(self):
+    def pagination(self, qtty_rows: int):
         with self.pag_container:
             items_per_page, page = read_cte.show_pagination(
-                self.qtty_rows,
+                qtty_rows,
                 OPTS_ITEMS_PAGE,
                 self.base_key,
             )
 
         return items_per_page, page
 
-    def get_df(self):
-        stmt_pag = read_cte.get_stmt_pag(
-            self.stmt_no_pag, self.items_per_page, self.page
-        )
-        with self.conn.connect() as c:
-            df = pd.read_sql(stmt_pag, c)
-
-        return df
-
-    def get_initial_balance(self):
+    def get_initial_balance(self, col_filter: read_cte.ColFilter):
         if self.rolling_total_column is None:
             return 0
 
@@ -172,14 +197,14 @@ class SqlUi:
         if not self.df.empty:
             first_row_id = int(self.df.iloc[0].id)
 
-        no_dt_filters = self.col_filter.no_dt_filters
+        no_dt_filters = col_filter.no_dt_filters
         stmt_no_pag_dt = read_cte.get_stmt_no_pag_dt(self.cte, no_dt_filters)
 
         with self.conn.session as s:
             initial_balance = read_cte.initial_balance(
                 _session=s,
                 stmt_no_pag_dt=stmt_no_pag_dt,
-                col_filter=self.col_filter,
+                col_filter=col_filter,
                 rolling_total_column=self.rolling_total_column,
                 first_row_id=first_row_id,
             )
@@ -190,29 +215,34 @@ class SqlUi:
 
         return initial_balance
 
-    def add_balance_col(self, df: pd.DataFrame):
+    def get_df(
+        self,
+        stmt_pag: Select,
+        initial_balance: float,
+    ):
+        with self.conn.connect() as c:
+            df = pd.read_sql(stmt_pag, c)
+
         if self.rolling_total_column is None:
             return df
 
         rolling_col_name = f"Balance {self.rolling_pretty_name}"
-        df[rolling_col_name] = (
-            df[self.rolling_total_column].cumsum() + self.initial_balance
-        )
+        df[rolling_col_name] = df[self.rolling_total_column].cumsum() + initial_balance
 
         return df
 
-    def show_df(self):
-        if self.df.empty:
+    def show_df(self, df: pd.DataFrame):
+        if df.empty:
             st.header(":red[Tabela Vazia]")
             return None
 
         column_order = None
         if self.hide_id:
-            column_order = [colname for colname in self.df.columns if colname != "id"]
+            column_order = [colname for colname in df.columns if colname != "id"]
 
-        df_style = self.df
+        df_style = df
         if self.style_fn is not None:
-            df_style = self.df.style.apply(self.style_fn, axis=1)
+            df_style = df.style.apply(self.style_fn, axis=1)
 
         selection_state = self.data_container.dataframe(
             df_style,
@@ -237,8 +267,8 @@ class SqlUi:
 
         return rows_pos
 
-    def crud(self):
-        qtty_rows = len(self.rows_selected)
+    def crud(self, df: pd.DataFrame, rows_selected: list[int]):
+        qtty_rows = len(rows_selected)
         action = update_model.action_btns(
             self.btns_container,
             qtty_rows,
@@ -253,7 +283,7 @@ class SqlUi:
             )
             create_row.show_dialog()
         elif action == "edit":
-            selected_pos = self.rows_selected[0]
+            selected_pos = rows_selected[0]
             row_id = int(self.df.iloc[selected_pos]["id"])
             update_row = update_model.UpdateRow(
                 conn=self.conn,
@@ -264,7 +294,7 @@ class SqlUi:
             )
             update_row.show_dialog()
         elif action == "delete":
-            rows_id = self.df.iloc[self.rows_selected].id.astype(int).to_list()
+            rows_id = df.iloc[rows_selected].id.astype(int).to_list()
             delete_rows = create_delete_model.DeleteRows(
                 conn=self.conn,
                 Model=self.edit_create_model,
