@@ -48,7 +48,7 @@ class SqlUi:
             read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False
             hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True
             base_key (str, optional): A prefix to add to widget's key argument.
-            style_fn (Callable[[pd.Series], list[str]], optional): A function that style the DataFrame that receives the a Series representing a DataFrame row as argument and should return a list of string with the css property of the size of the number of columns of the DataFrame
+            style_fn (Callable[[pd.Series], list[str]], optional): A function that style the DataFrame that receives a Series representing a DataFrame row as argument and should return a list of string with the css property of the size of the number of columns of the DataFrame
 
         Attributes:
             df (pd.Dataframe): The Dataframe displayed in the screen
@@ -80,7 +80,7 @@ class SqlUi:
         stmt_no_pag = read_cte.get_stmt_no_pag(self.cte, col_filter)
         initial_balance = self.get_initial_balance(stmt_no_pag, col_filter)
         qtty_rows = read_cte.get_qtty_rows(self.conn, stmt_no_pag)
-        items_per_page, page = self.pagination(qtty_rows)
+        items_per_page, page = self.pagination(qtty_rows, col_filter)
         stmt_pag = read_cte.get_stmt_pag(stmt_no_pag, items_per_page, page)
         df = self.get_df(stmt_pag, initial_balance)
         selection_state = self.show_df(df)
@@ -100,6 +100,7 @@ class SqlUi:
         lib.set_state("stsql_update_ok", None)
         lib.set_state("stsql_update_message", None)
         lib.set_state("stsql_opened", False)
+        lib.set_state("stsql_filters", {})
 
     def set_structure(self):
         self.header_container = st.container()
@@ -170,13 +171,18 @@ class SqlUi:
 
         return col_filter
 
-    def pagination(self, qtty_rows: int):
+    def pagination(self, qtty_rows: int, col_filter: read_cte.ColFilter):
         with self.pag_container:
             items_per_page, page = read_cte.show_pagination(
                 qtty_rows,
                 OPTS_ITEMS_PAGE,
                 self.base_key,
             )
+
+        filters = {**col_filter.no_dt_filters, **col_filter.dt_filters}
+        if filters != ss.stsql_filters:
+            page = 1
+            ss.stsql_filters = filters
 
         return items_per_page, page
 
