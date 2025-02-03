@@ -31,6 +31,7 @@ class SqlUi:
         available_filter: list[str] | None = None,
         edit_create_default_values: dict | None = None,
         rolling_total_column: str | None = None,
+        df_style_formatter: dict[str, str] | None = None,
         read_use_container_width: bool = False,
         hide_id: bool = True,
         base_key: str = "",
@@ -39,21 +40,24 @@ class SqlUi:
     ):
         """Init method
 
-        Arguments:
-            conn (SQLConnection): A sqlalchemy connection created with st.connection(\"sql\", url=\"<sqlalchemy url>\")
-            read_instance (Select | CTE | Model): The sqlalchemy select statement to display or a CTE. Choose columns to display , join, query or order.If selecting columns, you need to add the id column. If a Model, it will select all columns.
-            edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object
-            available_filter (list[str], optional): Define wich columns the user will be able to filter in the sidebar. Defaults to all
-            rolling_total_column (str, optional): A numeric column name of the Model. A new column will be displayed with the rolling sum of these column
-            read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False
-            hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True
-            base_key (str, optional): A prefix to add to widget's key argument.
-            style_fn (Callable[[pd.Series], list[str]], optional): A function that style the DataFrame that receives a Series representing a DataFrame row as argument and should return a list of string with the css property of the size of the number of columns of the DataFrame
+            Arguments:
+                conn (SQLConnection): A sqlalchemy connection created with st.connection(\"sql\", url=\"<sqlalchemy url>\")
+                read_instance (Select | CTE | Model): The sqlalchemy select statement to display or a CTE. Choose columns to display , join, query or order.If selecting columns, you need to add the id column. If a Model, it will select all columns.
+                edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object
+                available_filter (list[str], optional): Define wich columns the user will be able to filter in the sidebar. Defaults to all
+                rolling_total_column (str, optional): A numeric column name of the Model. A new column will be displayed with the rolling sum of these column
+                df_style_formatter (dict[str,str]): a dictionary where each key is a column name and the associated value is the formatter arg of df.style.format method. See pandas docs for details.
+        is one of the following:
+                read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False
+                hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True
+                base_key (str, optional): A prefix to add to widget's key argument.
+                style_fn (Callable[[pd.Series], list[str]], optional): A function that style the DataFrame that receives a Series representing a DataFrame row as argument and should return a list of string with the css property of the size of the number of columns of the DataFrame
+                update_show_many (bool, optional). Show a st.expander of one-to-many relations in edit or create dialog
 
-        Attributes:
-            df (pd.Dataframe): The Dataframe displayed in the screen
-            selected_rows (list[int]): The position of selected rows. This is not the row id.
-            qtty_rows (int): The quantity of all rows after filtering
+            Attributes:
+                df (pd.Dataframe): The Dataframe displayed in the screen
+                selected_rows (list[int]): The position of selected rows. This is not the row id.
+                qtty_rows (int): The quantity of all rows after filtering
         """
         self.conn = conn
         self.read_instance = read_instance
@@ -61,6 +65,7 @@ class SqlUi:
         self.available_filter = available_filter or []
         self.edit_create_default_values = edit_create_default_values or {}
         self.rolling_total_column = rolling_total_column
+        self.df_style_formatter = df_style_formatter or {}
         self.read_use_container_width = read_use_container_width
         self.hide_id = hide_id
         self.base_key = base_key
@@ -240,6 +245,16 @@ class SqlUi:
 
         return df
 
+    def add_balance_formatter(self, df_style_formatter: dict[str, str]):
+        formatter = {}
+        for k, v in df_style_formatter.items():
+            formatter[k] = v
+            if k == self.rolling_total_column:
+                rolling_col_name = f"Balance {self.rolling_pretty_name}"
+                formatter[rolling_col_name] = v
+
+        return formatter
+
     def show_df(self, df: pd.DataFrame):
         if df.empty:
             st.header(":red[Tabela Vazia]")
@@ -249,9 +264,11 @@ class SqlUi:
         if self.hide_id:
             column_order = [colname for colname in df.columns if colname != "id"]
 
-        df_style = df
+        df_style = df.style
+        formatter = self.add_balance_formatter(self.df_style_formatter)
+        df_style = df_style.format(formatter)  # pyright: ignore
         if self.style_fn is not None:
-            df_style = df.style.apply(self.style_fn, axis=1)
+            df_style = df_style.apply(self.style_fn, axis=1)
 
         selection_state = self.data_container.dataframe(
             df_style,
@@ -319,6 +336,7 @@ def show_sql_ui(
     available_filter: list[str] | None = None,
     edit_create_default_values: dict | None = None,
     rolling_total_column: str | None = None,
+    df_style_formatter: dict[str, str] | None = None,
     read_use_container_width: bool = False,
     hide_id: bool = True,
     base_key: str = "",
@@ -327,44 +345,47 @@ def show_sql_ui(
 ) -> tuple[pd.DataFrame, list[int]] | None:
     """Show A CRUD interface in a Streamlit Page
 
-    Args:
-        conn (SQLConnection): A sqlalchemy connection created with st.connection(\"sql\", url=\"<sqlalchemy url>\")
-        read_instance (Select | CTE | Model): The sqlalchemy select statement to display or a CTE. Choose columns to display , join, query or order.If selecting columns, you need to add the id column. If a Model, it will select all columns.
-        edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object
-        available_filter (list[str], optional): Define wich columns the user will be able to filter in the sidebar. Defaults to all
-        rolling_total_column (str, optional): A numeric column name of the Model. A new column will be displayed with the rolling sum of these column
-        read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False
-        hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True
-        base_key (str, optional): A prefix to add to widget's key argument.
-        style_fn (Callable[[pd.Series], list[str]], optional): A function that style the DataFrame that receives the a Series representing a DataFrame row as argument and should return a list of string with the css property of the size of the number of columns of the DataFrame
+        Args:
+            conn (SQLConnection): A sqlalchemy connection created with st.connection(\"sql\", url=\"<sqlalchemy url>\")
+            read_instance (Select | CTE | Model): The sqlalchemy select statement to display or a CTE. Choose columns to display , join, query or order.If selecting columns, you need to add the id column. If a Model, it will select all columns.
+            edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object
+            available_filter (list[str], optional): Define wich columns the user will be able to filter in the sidebar. Defaults to all
+            rolling_total_column (str, optional): A numeric column name of the Model. A new column will be displayed with the rolling sum of these column
+            df_style_formatter (dict[str,str]): a dictionary where each key is a column name and the associated value is the formatter arg of df.style.format method. See pandas docs for details.
+    is one of the following:
+            read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False
+            hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True
+            base_key (str, optional): A prefix to add to widget's key argument.
+            style_fn (Callable[[pd.Series], list[str]], optional): A function that style the DataFrame that receives a Series representing a DataFrame row as argument and should return a list of string with the css property of the size of the number of columns of the DataFrame
+            update_show_many (bool, optional). Show a st.expander of one-to-many relations in edit or create dialog
 
-    Returns:
-        tuple[pd.DataFrame, list[int]]: A Tuple with the DataFrame displayed as first item and a list of rows numbers selected as second item.
+        Returns:
+            tuple[pd.DataFrame, list[int]]: A Tuple with the DataFrame displayed as first item and a list of rows numbers selected as second item.
 
-    Examples:
-        ```python
-        conn = st.connection("sql", db_url)
+        Examples:
+            ```python
+            conn = st.connection("sql", db_url)
 
-        stmt = (
-            select(
-                db.Invoice.id,
-                db.Invoice.Date,
-                db.Invoice.amount,
-                db.Client.name,
+            stmt = (
+                select(
+                    db.Invoice.id,
+                    db.Invoice.Date,
+                    db.Invoice.amount,
+                    db.Client.name,
+                )
+                .join(db.Client)
+                .where(db.Invoice.amount > 1000)
+        .       .order_by(db.Invoice.date)
             )
-            .join(db.Client)
-            .where(db.Invoice.amount > 1000)
-    .       .order_by(db.Invoice.date)
-        )
 
-        show_sql_ui(conn=conn,
-                    read_instance=stmt,
-                    edit_create_model=db.Invoice,
-                    available_filter=["name"],
-                    rolling_total_column="amount",
-        )
+            show_sql_ui(conn=conn,
+                        read_instance=stmt,
+                        edit_create_model=db.Invoice,
+                        available_filter=["name"],
+                        rolling_total_column="amount",
+            )
 
-        ```
+            ```
 
 
     """
@@ -375,6 +396,7 @@ def show_sql_ui(
         available_filter=available_filter,
         edit_create_default_values=edit_create_default_values,
         rolling_total_column=rolling_total_column,
+        df_style_formatter=df_style_formatter,
         read_use_container_width=read_use_container_width,
         hide_id=hide_id,
         base_key=base_key,
