@@ -11,6 +11,8 @@ from sqlalchemy.sql.elements import KeyedColumnElement
 from sqlalchemy.sql.expression import literal_column
 from streamlit.connections.sql_connection import SQLConnection
 from streamlit.delta_generator import DeltaGenerator
+from sqlalchemy.types import Enum as SQLEnum
+
 
 from streamlit_sql.lib import get_pretty_name
 
@@ -25,13 +27,14 @@ hash_funcs: dict[Any, Callable[[Any], Any]] = {
 def get_existing_cond(col: KeyedColumnElement):
     is_str = col.type.python_type is str
     is_bool = col.type.python_type is bool
+    is_enum = isinstance(col.type, SQLEnum)
     is_not_pk = not col.primary_key
 
     fks = list(col.foreign_keys)
     has_fk = len(fks) > 0
     int_not_fk_cond = col.type.python_type is int and not has_fk
 
-    cond = is_not_pk and (is_str or is_bool or int_not_fk_cond)
+    cond = is_not_pk and (is_str or is_bool or int_not_fk_cond, is_enum)
     return cond
 
 

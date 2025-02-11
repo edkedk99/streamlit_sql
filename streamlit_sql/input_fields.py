@@ -3,6 +3,7 @@ from datetime import date
 import streamlit as st
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql.elements import KeyedColumnElement
+from sqlalchemy.types import Enum as SQLEnum
 from streamlit_datalist import stDatalist
 
 from streamlit_sql.filters import ExistingData
@@ -51,6 +52,17 @@ class InputFields:
             val_index = len(opts) - 1
             return val_index, opts
 
+    def input_enum(self, col_enum: SQLEnum, col_value=None):
+        col_name = col_enum.name
+        assert col_name is not None
+        opts = col_enum.enums
+        if col_value:
+            index = opts.index(col_value)
+        else:
+            index = None
+        input_value = st.selectbox(col_name, opts, index=index)
+        return input_value
+
     def input_str(self, col_name: str, value=None):
         key = f"{self.key_prefix}_{col_name}"
         val_index, opts = self.get_col_str_opts(col_name, value)
@@ -82,6 +94,8 @@ class InputFields:
             input_value = st.date_input(pretty_name, value=col_value)
         elif col.type.python_type is bool:
             input_value = st.checkbox(pretty_name, value=col_value)
+        elif isinstance(col.type, SQLEnum):
+            input_value = self.input_enum(col.type, col_value.value)
         else:
             input_value = None
 

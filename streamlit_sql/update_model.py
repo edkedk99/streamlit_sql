@@ -39,6 +39,7 @@ class UpdateRow:
     def get_updates(self):
         cols = self.Model.__table__.columns
         updated = {}
+
         for col in cols:
             col_name = col.description
             assert col_name is not None

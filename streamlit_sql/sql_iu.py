@@ -7,8 +7,9 @@ from sqlalchemy.orm import DeclarativeBase
 from streamlit import session_state as ss
 from streamlit.connections import SQLConnection
 from streamlit.elements.arrow import DataframeState
-
+from enum import Enum
 from streamlit_sql import create_delete_model, lib, read_cte, update_model
+from sqlalchemy.types import Enum as SQLEnum
 
 OPTS_ITEMS_PAGE = (50, 100, 200, 500, 1000)
 
@@ -229,6 +230,15 @@ class SqlUi:
 
         return initial_balance
 
+    def convert_arrow(self, df: pd.DataFrame):
+        cols = self.cte.columns
+        for col in cols:
+            if isinstance(col.type, SQLEnum):
+                col_name = col.name
+                df[col_name] = df[col_name].map(lambda v: v.value)
+
+        return df
+
     def get_df(
         self,
         stmt_pag: Select,
@@ -237,6 +247,7 @@ class SqlUi:
         with self.conn.connect() as c:
             df = pd.read_sql(stmt_pag, c)
 
+        df = self.convert_arrow(df)
         if self.rolling_total_column is None:
             return df
 
@@ -310,7 +321,7 @@ class SqlUi:
             create_row.show_dialog()
         elif action == "edit":
             selected_pos = rows_selected[0]
-            row_id = int(self.df.iloc[selected_pos]["id"])
+            row_id = int(df.iloc[selected_pos]["id"])
             update_row = update_model.UpdateRow(
                 conn=self.conn,
                 Model=self.edit_create_model,

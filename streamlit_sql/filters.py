@@ -10,6 +10,7 @@ from sqlalchemy.orm import DeclarativeBase, InstrumentedAttribute
 from sqlalchemy.orm.session import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
 from sqlalchemy.sql.schema import ForeignKey
+from sqlalchemy.types import Enum as SQLEnum
 from streamlit import session_state as ss
 
 from streamlit_sql.lib import get_pretty_name
@@ -197,7 +198,7 @@ class SidebarFilter:
         assert col_name is not None
         col_label = get_pretty_name(col_name)
         is_fk = len(col.foreign_keys) > 0
-        col_type = col.type.python_type
+        pytype = col.type.python_type
         if is_fk:
             opts = self.opts.fk[col_name]
             rel_name = col_label.removesuffix(" Id")
@@ -207,16 +208,23 @@ class SidebarFilter:
                 format_func=lambda opt: opt.name,
                 index=None,
             )
-        elif col_type is str:
+        elif pytype is str:
             opts = self.opts.text[col_name]
             value = st.sidebar.selectbox(col_label, options=opts, index=None)
-        elif col_type is int:
+        elif pytype is int:
             value = st.sidebar.number_input(col_label, step=1, value=None)
-        elif col_type is float:
+        elif pytype is float:
             value = st.sidebar.number_input(col_label, step=0.1, value=None)
-        elif col_type is date:
+        elif pytype is date:
             min_value, max_value = self.opts.dt[col_name]
             value = self._date_filter(col_label, min_value, max_value)
+        elif isinstance(col.type, SQLEnum):
+            value = st.selectbox(
+                col_label,
+                options=col.type.enums,
+                index=None,
+                format_func=lambda c: c.value,
+            )
         else:
             value = None
 
