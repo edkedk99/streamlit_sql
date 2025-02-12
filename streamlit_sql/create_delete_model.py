@@ -6,7 +6,7 @@ from streamlit.connections.sql_connection import SQLConnection
 
 from streamlit_sql.filters import ExistingData
 from streamlit_sql.input_fields import InputFields
-from streamlit_sql.lib import get_pretty_name, set_state
+from streamlit_sql.lib import get_pretty_name, log, set_state
 
 
 class CreateRow:
@@ -62,9 +62,13 @@ class CreateRow:
                     s.add(row)
                     s.commit()
                     ss.stsql_updated += 1
+                    log.info(f"Added in {self.Model.__tablename__}: {row}")
                     return True, f"Criado com sucesso {row}"
                 except Exception as e:
                     ss.stsql_updated += 1
+                    log.error(
+                        f"Error while adding in {self.Model.__tablename__}: {row}"
+                    )
                     return False, str(e)
         else:
             return None, None
@@ -123,18 +127,25 @@ class DeleteRows:
         if btn:
             id_col = self.Model.__table__.columns.get("id")
             assert id_col is not None
+            lancs = []
             with self.conn.session as s:
                 try:
                     for row_id in self.rows_id:
                         lanc = s.get(self.Model, row_id)
+                        lancs.append(str(lanc))
                         s.delete(lanc)
 
                     s.commit()
                     ss.stsql_updated += 1
                     qtty = len(self.rows_id)
+                    lancs_str = ", ".join(lancs)
+                    log.info(
+                        f"Deleted from {self.Model.__tablename__} {qtty} rows: {lancs_str}"
+                    )
                     return True, f"Deletado com sucesso {qtty} registros"
                 except Exception as e:
                     ss.stsql_updated += 1
+                    log.error(f"Error while deleting from {self.Model.__tablename__}")
                     return False, str(e)
         else:
             return None, None

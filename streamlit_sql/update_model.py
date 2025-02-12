@@ -1,5 +1,5 @@
 import streamlit as st
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
 from streamlit import session_state as ss
 from streamlit.connections.sql_connection import SQLConnection
@@ -8,7 +8,7 @@ from streamlit.delta_generator import DeltaGenerator
 from streamlit_sql import many
 from streamlit_sql.filters import ExistingData
 from streamlit_sql.input_fields import InputFields
-from streamlit_sql.lib import get_pretty_name, set_state
+from streamlit_sql.lib import get_pretty_name, log, set_state
 
 
 class UpdateRow:
@@ -58,19 +58,23 @@ class UpdateRow:
     def save(self, updated: dict):
         with self.conn.session as s:
             try:
-                stmt = (
-                    update(self.Model)
-                    .where(self.Model.__table__.columns.id == updated["id"])
-                    .values(**updated)
+                stmt = select(self.Model).where(
+                    self.Model.__table__.columns.id == updated["id"]
                 )
-                s.execute(stmt)
+                row = s.execute(stmt).scalar_one()
+                for k, v in updated.items():
+                    setattr(row, k, v)
+
+                s.add(row)
                 s.commit()
-                new_row_stmt = select(self.Model).where(
-                    self.Model.id == updated["id"]  # pyright: ignore
-                )  # pyright: ignore
-                new_row = s.execute(new_row_stmt).scalar_one()
-                return True, f"Atualizado com sucesso {new_row}"
+                log.info(f"Updated in {self.Model.__tablename__}: {row}")
+                return True, f"Atualizado com sucesso {row}"
             except Exception as e:
+                updated_list = [f"{k}: {v}" for k, v in updated.items()]
+                updated_str = ", ".join(updated_list)
+                log.error(
+                    f"Error while updating in {self.Model.__tablename__}: {updated_str}"
+                )
                 return False, str(e)
 
     def show(self):
@@ -114,7 +118,7 @@ def action_btns(container: DeltaGenerator, qtty_selected: int, opened: bool):
     disabled_delete = qtty_selected == 0
 
     with container:
-        add_col, edit_col, del_col, empty_col = st.columns([1, 1, 1, 6])
+        add_col, edit_col, del_col, _empty_col = st.columns([1, 1, 1, 6])
 
         add_btn = add_col.button(
             "",

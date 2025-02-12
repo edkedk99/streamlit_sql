@@ -1,27 +1,26 @@
+import sys
+
 import streamlit as st
+from loguru import logger
 from streamlit import session_state as ss
-from streamlit.elements.arrow import DataframeState
+
+log = logger.bind(name="streamlit_sql")
+
+
+def set_logging(disable_log: bool):
+    if disable_log:
+        logger.disable("streamlit_sql")
+        return
+
+    logger.enable("streamlit_sql")
+
+    if not logger._core.handlers:  # pyright: ignore
+        logger.add(sys.stderr, level="INFO")
 
 
 def set_state(key: str, value):
     if key not in ss:
         ss[key] = value
-
-
-def get_row_index(state: DataframeState | None):
-    if not state:
-        return None
-
-    selection = state.get("selection")
-    if not selection:
-        return None
-
-    rows = selection.get("rows")
-    if rows:
-        result = rows[0]
-        return result
-
-    return None
 
 
 @st.cache_data

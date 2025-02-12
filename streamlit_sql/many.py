@@ -31,15 +31,6 @@ class ReadManyRel:
         return col
 
     @cached_property
-    def other_colname_noid(self):
-        if self.other_col.name.endswith("_id"):
-            name = self.other_col.name[:-3]
-        else:
-            name = self.other_col.name
-
-        return name
-
-    @cached_property
     def other_model(self):
         other_col = self.other_col
         other_colname: str = other_col.table.name

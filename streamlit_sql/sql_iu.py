@@ -4,12 +4,12 @@ import pandas as pd
 import streamlit as st
 from sqlalchemy import CTE, Select, select
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.types import Enum as SQLEnum
 from streamlit import session_state as ss
 from streamlit.connections import SQLConnection
 from streamlit.elements.arrow import DataframeState
-from enum import Enum
+
 from streamlit_sql import create_delete_model, lib, read_cte, update_model
-from sqlalchemy.types import Enum as SQLEnum
 
 OPTS_ITEMS_PAGE = (50, 100, 200, 500, 1000)
 
@@ -38,6 +38,7 @@ class SqlUi:
         base_key: str = "",
         style_fn: Callable[[pd.Series], list[str]] | None = None,
         update_show_many: bool = False,
+        disable_log: bool = False,
     ):
         """Init method
 
@@ -72,6 +73,7 @@ class SqlUi:
         self.base_key = base_key
         self.style_fn = style_fn
         self.update_show_many = update_show_many
+        self.disable_log = disable_log
 
         self.cte = self.get_cte()
         self.rolling_pretty_name = lib.get_pretty_name(self.rolling_total_column or "")
@@ -80,6 +82,7 @@ class SqlUi:
         self.set_initial_state()
         self.set_structure()
         self.notification()
+        lib.set_logging(self.disable_log)
 
         # Create UI
         col_filter = self.filter()

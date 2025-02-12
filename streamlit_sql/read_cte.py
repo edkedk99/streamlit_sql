@@ -9,10 +9,9 @@ from sqlalchemy import CTE, Select, desc, distinct, func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
 from sqlalchemy.sql.expression import literal_column
+from sqlalchemy.types import Enum as SQLEnum
 from streamlit.connections.sql_connection import SQLConnection
 from streamlit.delta_generator import DeltaGenerator
-from sqlalchemy.types import Enum as SQLEnum
-
 
 from streamlit_sql.lib import get_pretty_name
 
@@ -55,7 +54,7 @@ def get_existing_values(
 
     result: dict[str, Any] = {}
     for col in cols:
-        stmt = select(distinct(col)).order_by(col)
+        stmt = select(distinct(col)).order_by(col).limit(10000)
         values = _session.execute(stmt).scalars().all()
         colname = col.description
         assert colname is not None
