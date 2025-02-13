@@ -40,26 +40,72 @@ class SqlUi:
         update_show_many: bool = False,
         disable_log: bool = False,
     ):
-        """Init method
+        """The CRUD interface will be displayes just by initializing the class
 
-            Arguments:
-                conn (SQLConnection): A sqlalchemy connection created with st.connection(\"sql\", url=\"<sqlalchemy url>\")
-                read_instance (Select | CTE | Model): The sqlalchemy select statement to display or a CTE. Choose columns to display , join, query or order.If selecting columns, you need to add the id column. If a Model, it will select all columns.
-                edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object
-                available_filter (list[str], optional): Define wich columns the user will be able to filter in the sidebar. Defaults to all
-                rolling_total_column (str, optional): A numeric column name of the Model. A new column will be displayed with the rolling sum of these column
-                df_style_formatter (dict[str,str]): a dictionary where each key is a column name and the associated value is the formatter arg of df.style.format method. See pandas docs for details.
-        is one of the following:
-                read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False
-                hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True
-                base_key (str, optional): A prefix to add to widget's key argument.
-                style_fn (Callable[[pd.Series], list[str]], optional): A function that style the DataFrame that receives a Series representing a DataFrame row as argument and should return a list of string with the css property of the size of the number of columns of the DataFrame
-                update_show_many (bool, optional). Show a st.expander of one-to-many relations in edit or create dialog
+        Arguments:
+            conn (SQLConnection): A sqlalchemy connection created with st.connection(\"sql\", url=\"<sqlalchemy url>\")
+            read_instance (Select | CTE | Model): The sqlalchemy select statement to display or a CTE. Choose columns to display , join, query or order.If selecting columns, you need to add the id column. If a Model, it will select all columns.
+            edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object
+            available_filter (list[str], optional): Define wich columns the user will be able to filter in the top exapander. Defaults to all
+            rolling_total_column (str, optional): A numeric column name of the read_instance. A new column will be displayed with the rolling sum of these column
+            df_style_formatter (dict[str,str]): a dictionary where each key is a column name and the associated value is the formatter arg of df.style.format method. See pandas docs for details.
+            read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False
+            hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True
+            base_key (str, optional): A prefix to add to widget's key argument. This is needed when creating more than one instance of this class in the same page. Defaults to empty str
+            style_fn (Callable[[pd.Series], list[str]], optional): A function that goes into the *func* argument of *df.style.apply*. The apply method also receives *axis=1*, so it works on rows. It can be used to apply conditional css formatting on each column of the row. See Styler.apply info on pandas docs. Defaults to None
+            update_show_many (bool, optional): Show a st.expander of one-to-many relations in edit or create dialog
+            disable_log (bool): Every change in the database (READ, UPDATE, DELETE) is logged to stderr by default. If this is *true*, nothing is logged. To customize the logging format and where it logs to, use loguru as add a new sink to logger. See loguru docs for more information. Dafaults to False
 
-            Attributes:
-                df (pd.Dataframe): The Dataframe displayed in the screen
-                selected_rows (list[int]): The position of selected rows. This is not the row id.
-                qtty_rows (int): The quantity of all rows after filtering
+        Attributes:
+            df (pd.Dataframe): The Dataframe displayed in the screen
+            selected_rows (list[int]): The position of selected rows. This is not the row id.
+            qtty_rows (int): The quantity of all rows after filtering
+
+
+        Examples:
+            ```python
+            def style_fn(row):
+                if row.amount > 0:
+                    bg = "background-color: rgba(0, 255, 0, 0.1)"
+                else:
+                    bg = "background-color: rgba(255, 0, 0, 0.2)"
+
+                result = [bg] * len(row)
+                return result
+
+
+            db_url = "sqlite:///data.db"
+            conn = st.connection("sql", db_url)
+
+            stmt = (
+                select(
+                    db.Invoice.id,
+                    db.Invoice.Date,
+                    db.Invoice.amount,
+                    db.Client.name,
+                )
+                .join(db.Client)
+                .where(db.Invoice.amount > 1000)
+                .order_by(db.Invoice.date)
+            )
+
+            sql_ui = SqlUi(
+                conn=conn,
+                read_instance=stmt,
+                edit_create_model=db.Invoice,
+                available_filter=["name"],
+                rolling_total_column="amount",
+                df_style_formatter={"amount": "{:,.2f}"},
+                read_use_container_width=True,
+                hide_id=True,
+                base_key="my_base_sql_ui",
+                style_fn=style_fn,
+                update_show_many=True,
+                disable_log=False,
+            )
+
+            ```
+
         """
         self.conn = conn
         self.read_instance = read_instance
@@ -359,48 +405,13 @@ def show_sql_ui(
 ) -> tuple[pd.DataFrame, list[int]] | None:
     """Show A CRUD interface in a Streamlit Page
 
-        Args:
-            conn (SQLConnection): A sqlalchemy connection created with st.connection(\"sql\", url=\"<sqlalchemy url>\")
-            read_instance (Select | CTE | Model): The sqlalchemy select statement to display or a CTE. Choose columns to display , join, query or order.If selecting columns, you need to add the id column. If a Model, it will select all columns.
-            edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object
-            available_filter (list[str], optional): Define wich columns the user will be able to filter in the sidebar. Defaults to all
-            rolling_total_column (str, optional): A numeric column name of the Model. A new column will be displayed with the rolling sum of these column
-            df_style_formatter (dict[str,str]): a dictionary where each key is a column name and the associated value is the formatter arg of df.style.format method. See pandas docs for details.
-    is one of the following:
-            read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False
-            hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True
-            base_key (str, optional): A prefix to add to widget's key argument.
-            style_fn (Callable[[pd.Series], list[str]], optional): A function that style the DataFrame that receives a Series representing a DataFrame row as argument and should return a list of string with the css property of the size of the number of columns of the DataFrame
-            update_show_many (bool, optional). Show a st.expander of one-to-many relations in edit or create dialog
+    This function is deprecated and will be removed in future versions. See SqlUi class docs for details on each argument.
 
-        Returns:
-            tuple[pd.DataFrame, list[int]]: A Tuple with the DataFrame displayed as first item and a list of rows numbers selected as second item.
+     Returns:
+         tuple[pd.DataFrame, list[int]]: A Tuple with the DataFrame displayed as first item and a list of rows numbers selected as second item.
 
-        Examples:
-            ```python
-            conn = st.connection("sql", db_url)
-
-            stmt = (
-                select(
-                    db.Invoice.id,
-                    db.Invoice.Date,
-                    db.Invoice.amount,
-                    db.Client.name,
-                )
-                .join(db.Client)
-                .where(db.Invoice.amount > 1000)
-        .       .order_by(db.Invoice.date)
-            )
-
-            show_sql_ui(conn=conn,
-                        read_instance=stmt,
-                        edit_create_model=db.Invoice,
-                        available_filter=["name"],
-                        rolling_total_column="amount",
-            )
-
-            ```
-
+    Example:
+        See SqlUi class for an example.
 
     """
     ui = SqlUi(

@@ -2,7 +2,9 @@
 
 ## Introduction
 
-This package shows a CRUD frontend to a database using sqlalchemy in a streamlit app. With just one line of code, show the data as table and allow the user to **read, filter, update, create and delete rows** with many useful features.
+Creating a CRUD interface can be a tedious and repetitive task. This package is intended to replace all of that with a few lines of code that involves simply creating a sqlalchemy statement and calling the main *SqlUi* class with only 3 required arguments. All extra and advanced features are available by supplying non-required arguments to the class initialization.
+
+When the main class is initialized, it will display the database table data with most of the expected features of a crud interface, so the user will be able to **read, filter, update, create and delete rows** with many useful features.
 
 ## Demo
 
@@ -31,6 +33,7 @@ See the package in action [here](https://example-crud.streamlit.app/).
 - Text columns offers candidates from existing values
 - ForeignKey columns are added by the string representation instead of its id number
 - In Update form, list all ONE-TO-MANY related rows with pagination, where you can directly create and delete related table rows. 
+- Log updates to database to stderr or in anyway **loguru** can handle
 
 
 ### CREATE
@@ -42,7 +45,7 @@ See the package in action [here](https://example-crud.streamlit.app/).
 
 ### DELETE
 
-- Delete one or multiple rows by selecting in DataFrame and clicking the corresponding button. I dialog will list selected rows and confirm deletion.
+- Delete one or multiple rows by selecting in DataFrame and clicking the corresponding button. A dialog will list selected rows and confirm deletion.
 
 
 
@@ -107,9 +110,5 @@ show_sql_ui(conn, model_opts)
 
 ## Customize
 
-You can adjust the CRUD interface by the select statement you provide to *read_instance* arg and giving optional arguments to the *show_sql_ui* function. See the docstring for more information or at [documentation webpage](https://edkedk99.github.io/streamlit_sql/api/#streamlit_sql.show_sql_ui):
+You can adjust the CRUD interface by the select statement you provide to *read_instance* arg and giving optional arguments to the *show_sql_ui* function. See the docstring for more information or at [documentation webpage](https://edkedk99.github.io/streamlit_sql/api/#streamlit_sql.SqlUi):
 
-
-## Only create or update form
-
-You can display just a create or update/delete form without the read interface using functions *show_updade*, and *show_create*.
