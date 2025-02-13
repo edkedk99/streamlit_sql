@@ -392,15 +392,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#only-create-or-update-form" class="md-nav__link">
-    <span class="md-ellipsis">
-      Only create or update form
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -576,15 +567,6 @@
   
 </li>
       
-        <li class="md-nav__item">
-  <a href="#only-create-or-update-form" class="md-nav__link">
-    <span class="md-ellipsis">
-      Only create or update form
-    </span>
-  </a>
-  
-</li>
-      
     </ul>
   
 </nav>
@@ -606,7 +588,8 @@
 
 <h1 id="streamlit_sql">streamlit_sql<a class="headerlink" href="#streamlit_sql" title="Permanent link">#</a></h1>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">#</a></h2>
-<p>This package shows a CRUD frontend to a database using sqlalchemy in a streamlit app. With just one line of code, show the data as table and allow the user to <strong>read, filter, update, create and delete rows</strong> with many useful features.</p>
+<p>Creating a CRUD interface can be a tedious and repetitive task. This package is intended to replace all of that with a few lines of code that involves simply creating a sqlalchemy statement and calling the main <em>SqlUi</em> class with only 3 required arguments. All extra and advanced features are available by supplying non-required arguments to the class initialization.</p>
+<p>When the main class is initialized, it will display the database table data with most of the expected features of a crud interface, so the user will be able to <strong>read, filter, update, create and delete rows</strong> with many useful features.</p>
 <h2 id="demo">Demo<a class="headerlink" href="#demo" title="Permanent link">#</a></h2>
 <p>See the package in action <a href="https://example-crud.streamlit.app/">here</a>.</p>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">#</a></h2>
@@ -631,6 +614,7 @@
 <li>Text columns offers candidates from existing values</li>
 <li>ForeignKey columns are added by the string representation instead of its id number</li>
 <li>In Update form, list all ONE-TO-MANY related rows with pagination, where you can directly create and delete related table rows. </li>
+<li>Log updates to database to stderr or in anyway <strong>loguru</strong> can handle</li>
 </ul>
 <h3 id="create">CREATE<a class="headerlink" href="#create" title="Permanent link">#</a></h3>
 <ul>
@@ -641,7 +625,7 @@
 </ul>
 <h3 id="delete">DELETE<a class="headerlink" href="#delete" title="Permanent link">#</a></h3>
 <ul>
-<li>Delete one or multiple rows by selecting in DataFrame and clicking the corresponding button. I dialog will list selected rows and confirm deletion.</li>
+<li>Delete one or multiple rows by selecting in DataFrame and clicking the corresponding button. A dialog will list selected rows and confirm deletion.</li>
 </ul>
 <h2 id="requirements">Requirements<a class="headerlink" href="#requirements" title="Permanent link">#</a></h2>
 <p>All the requirements you should probably have anyway.</p>
@@ -694,9 +678,7 @@
 <li>Delete row: Click on "trash" button (one or more dataframe rows should be selected)</li>
 </ul>
 <h2 id="customize">Customize<a class="headerlink" href="#customize" title="Permanent link">#</a></h2>
-<p>You can adjust the CRUD interface by the select statement you provide to <em>read_instance</em> arg and giving optional arguments to the <em>show_sql_ui</em> function. See the docstring for more information or at <a href="https://edkedk99.github.io/streamlit_sql/api/#streamlit_sql.show_sql_ui">documentation webpage</a>:</p>
-<h2 id="only-create-or-update-form">Only create or update form<a class="headerlink" href="#only-create-or-update-form" title="Permanent link">#</a></h2>
-<p>You can display just a create or update/delete form without the read interface using functions <em>show_updade</em>, and <em>show_create</em>.</p>
+<p>You can adjust the CRUD interface by the select statement you provide to <em>read_instance</em> arg and giving optional arguments to the <em>show_sql_ui</em> function. See the docstring for more information or at <a href="https://edkedk99.github.io/streamlit_sql/api/#streamlit_sql.SqlUi">documentation webpage</a>:</p>
 
 
 
