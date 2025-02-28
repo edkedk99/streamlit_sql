@@ -111,7 +111,7 @@ class UpdateRow:
         wrap_show_update()
 
 
-def action_btns(container: DeltaGenerator, qtty_selected: int, opened: bool):
+def action_btns(container: DeltaGenerator, qtty_selected: int, opened: bool, base_key: str = ""):
     set_state("stsql_action", "")
     disabled_add = qtty_selected > 0
     disabled_edit = qtty_selected != 1
@@ -127,6 +127,7 @@ def action_btns(container: DeltaGenerator, qtty_selected: int, opened: bool):
             type="secondary",
             disabled=disabled_add,
             use_container_width=True,
+            key=f"{base_key}_add"
         )
 
         edit_btn = edit_col.button(
@@ -136,6 +137,7 @@ def action_btns(container: DeltaGenerator, qtty_selected: int, opened: bool):
             type="secondary",
             disabled=disabled_edit,
             use_container_width=True,
+            key=f"{base_key}_edit"
         )
 
         del_btn = del_col.button(
@@ -145,6 +147,7 @@ def action_btns(container: DeltaGenerator, qtty_selected: int, opened: bool):
             type="primary",
             disabled=disabled_delete,
             use_container_width=True,
+            key=f"{base_key}_del"
         )
 
         if opened:

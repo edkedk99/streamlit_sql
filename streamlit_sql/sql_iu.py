@@ -359,6 +359,7 @@ class SqlUi:
             self.btns_container,
             qtty_rows,
             ss.stsql_opened,
+            f"{self.base_key}_crud_btn_sql_ui",
         )
 
         if action == "add":
