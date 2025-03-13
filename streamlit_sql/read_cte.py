@@ -5,10 +5,9 @@ from typing import Any
 import pandas as pd
 import streamlit as st
 import streamlit_antd_components as sac
-from sqlalchemy import CTE, Select, desc, distinct, func, select
+from sqlalchemy import CTE, Select, distinct, func, select
 from sqlalchemy.orm import Session
 from sqlalchemy.sql.elements import KeyedColumnElement
-from sqlalchemy.sql.expression import literal_column
 from sqlalchemy.types import Enum as SQLEnum
 from streamlit.connections.sql_connection import SQLConnection
 from streamlit.delta_generator import DeltaGenerator
@@ -244,42 +243,21 @@ def get_stmt_pag(stmt_no_pag: Select, limit: int, page: int):
 def initial_balance(
     _session: Session,
     stmt_no_pag_dt: Select,
-    col_filter: ColFilter,
-    rolling_total_column: str | None,
-    first_row_id: int | None,
-):
-    if not rolling_total_column:
+    stmt_pag: Select,
+    rolling_total_column: str,
+    orderby_cols: list,
+) -> float:
+    stmt_pag_ordered = stmt_pag.order_by(*orderby_cols)
+    first_pag = _session.execute(stmt_pag_ordered).first()
+    if not first_pag:
         return 0
 
-    col = stmt_no_pag_dt.columns.get(rolling_total_column)
-    assert col is not None
+    stmt_no_pag_dt_ordered = stmt_no_pag_dt.order_by(*orderby_cols)
+    for col in orderby_cols:
+        stmt_no_pag_dt_ordered = stmt_no_pag_dt_ordered.where(
+            col < getattr(first_pag, col.name)
+        )
 
-    row_number_col = func.row_number().over(order_by=literal_column("NULL"))
-    id_col = stmt_no_pag_dt.c.id
-
-    subq = select(
-        id_col.label("id"),
-        row_number_col.label("position"),
-        col.label("Valor"),
-    ).subquery()
-
-    stmt_last = select(subq.c.position)
-    if first_row_id:
-        stmt_last = stmt_last.where(subq.c.id == first_row_id)
-    stmt_last = stmt_last.order_by(desc(subq.c.position))
-
-    last_pos_list = _session.execute(stmt_last).scalars().all()
-    if not last_pos_list:
-        return 0
-
-    last_pos = min(last_pos_list)
-
-    rolling_sum = func.sum(subq.c.Valor).over(order_by=subq.c.position)
-    stmt_sum = (
-        select(rolling_sum)
-        .where(subq.c.position < last_pos)
-        .order_by(desc(subq.c.position))
-    )
-
-    total: float | None = _session.execute(stmt_sum).scalars().first()
-    return total or 0
+    stmt_bal = select(func.sum(stmt_no_pag_dt_ordered.c.get(rolling_total_column)))
+    bal = _session.execute(stmt_bal).scalar_one() or 0
+    return bal

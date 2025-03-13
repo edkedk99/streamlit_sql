@@ -32,6 +32,7 @@ class SqlUi:
         available_filter: list[str] | None = None,
         edit_create_default_values: dict | None = None,
         rolling_total_column: str | None = None,
+        rolling_orderby_colsname: list[str] | None = None,
         df_style_formatter: dict[str, str] | None = None,
         read_use_container_width: bool = False,
         hide_id: bool = True,
@@ -113,6 +114,7 @@ class SqlUi:
         self.available_filter = available_filter or []
         self.edit_create_default_values = edit_create_default_values or {}
         self.rolling_total_column = rolling_total_column
+        self.rolling_orderby_colsname = rolling_orderby_colsname or ["id"]
         self.df_style_formatter = df_style_formatter or {}
         self.read_use_container_width = read_use_container_width
         self.hide_id = hide_id
@@ -133,10 +135,16 @@ class SqlUi:
         # Create UI
         col_filter = self.filter()
         stmt_no_pag = read_cte.get_stmt_no_pag(self.cte, col_filter)
-        initial_balance = self.get_initial_balance(stmt_no_pag, col_filter)
         qtty_rows = read_cte.get_qtty_rows(self.conn, stmt_no_pag)
         items_per_page, page = self.pagination(qtty_rows, col_filter)
         stmt_pag = read_cte.get_stmt_pag(stmt_no_pag, items_per_page, page)
+        initial_balance = self.get_initial_balance(
+            self.cte,
+            stmt_pag,
+            col_filter.no_dt_filters,
+            rolling_total_column,
+            self.rolling_orderby_colsname,
+        )
         df = self.get_df(stmt_pag, initial_balance)
         selection_state = self.show_df(df)
         rows_selected = self.get_rows_selected(selection_state)
@@ -197,6 +205,13 @@ class SqlUi:
         else:
             cte = select(self.read_instance).cte()
 
+        if self.rolling_total_column:
+            orderby_cols = [
+                cte.columns.get(colname) for colname in self.rolling_orderby_colsname
+            ]
+            orderby_cols = [col for col in orderby_cols if col is not None]
+            cte = select(cte).order_by(*orderby_cols).cte()
+
         return cte
 
     def filter(self):
@@ -241,12 +256,19 @@ class SqlUi:
 
         return items_per_page, page
 
-    def get_initial_balance(self, stmt_no_pag: Select, col_filter: read_cte.ColFilter):
-        if self.rolling_total_column is None:
+    def get_initial_balance(
+        self,
+        base_cte: CTE,
+        stmt_pag: Select,
+        no_dt_filters: dict,
+        rolling_total_column: str | None,
+        rolling_orderby_colsname: list[str],
+    ):
+        if rolling_total_column is None:
             return 0
 
         saldo_toogle = self.saldo_toggle_col.toggle(
-            f"Adiciona Saldo Devedor em {self.rolling_pretty_name}",
+            f"Adiciona Saldo Anterior em {self.rolling_pretty_name}",
             value=True,
             key=f"{self.base_key}_saldo_toggle_sql_ui",
         )
@@ -254,23 +276,19 @@ class SqlUi:
         if not saldo_toogle:
             return 0
 
-        with self.conn.session as s:
-            first_row = s.execute(stmt_no_pag).first()
+        stmt_no_pag_dt = read_cte.get_stmt_no_pag_dt(base_cte, no_dt_filters)
 
-        first_row_id: int | None = None
-        if first_row and isinstance(first_row.id, int):
-            first_row_id = first_row.id
-
-        no_dt_filters = col_filter.no_dt_filters
-        stmt_no_pag_dt = read_cte.get_stmt_no_pag_dt(self.cte, no_dt_filters)
-
+        orderby_cols = [
+            base_cte.columns.get(colname) for colname in rolling_orderby_colsname
+        ]
+        orderby_cols = [col for col in orderby_cols if col is not None]
         with self.conn.session as s:
             initial_balance = read_cte.initial_balance(
                 _session=s,
                 stmt_no_pag_dt=stmt_no_pag_dt,
-                col_filter=col_filter,
-                rolling_total_column=self.rolling_total_column,
-                first_row_id=first_row_id,
+                stmt_pag=stmt_pag,
+                rolling_total_column=rolling_total_column,
+                orderby_cols=orderby_cols,
             )
 
         self.saldo_value_col.subheader(
@@ -396,6 +414,7 @@ def show_sql_ui(
     available_filter: list[str] | None = None,
     edit_create_default_values: dict | None = None,
     rolling_total_column: str | None = None,
+    rolling_orderby_colsname: list[str] | None = None,
     df_style_formatter: dict[str, str] | None = None,
     read_use_container_width: bool = False,
     hide_id: bool = True,
@@ -421,6 +440,7 @@ def show_sql_ui(
         available_filter=available_filter,
         edit_create_default_values=edit_create_default_values,
         rolling_total_column=rolling_total_column,
+        rolling_orderby_colsname=rolling_orderby_colsname,
         df_style_formatter=df_style_formatter,
         read_use_container_width=read_use_container_width,
         hide_id=hide_id,

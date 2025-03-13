@@ -95,7 +95,7 @@ class InputFields:
         elif col.type.python_type is bool:
             input_value = st.checkbox(pretty_name, value=col_value)
         elif isinstance(col.type, SQLEnum):
-            input_value = self.input_enum(col.type, col_value.value)
+            input_value = self.input_enum(col.type, col_value)
         else:
             input_value = None
 

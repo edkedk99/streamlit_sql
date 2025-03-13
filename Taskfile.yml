@@ -1,0 +1,59 @@
+version: '3'
+
+vars:
+  PKG_NAME:
+    sh: sed -nE 's/^name = "([^"]+)"/\1/p' pyproject.toml
+  PKG_VERSION:
+    sh: sed -nE 's/^version = "([^"]+)"/\1/p' pyproject.toml
+
+tasks:
+  deploy-docs:
+    desc: Deploy mkdocs to github
+    cmds:
+      - uv run mkdocs gh-deploy
+
+  show-docs:
+    desc: Serve local mkdocs
+    cmds:
+      - uv run mkdocs serve
+
+  docker:
+    desc: Update and rerun container on server
+    vars:
+      REMOTE_DOCKER_COMPOSE: /shared/dock/{{.PKG_NAME}}/docker-compose.yml
+      REGISTRY_DOCKER_COMPOSE: /shared/dock/registry/docker-compose.yml
+      REMOTE_COMMAND: |
+        docker compose -f {{.REMOTE_DOCKER_COMPOSE}} down && \
+        docker compose -f {{.REMOTE_DOCKER_COMPOSE}} pull && \
+        docker compose -f {{.REMOTE_DOCKER_COMPOSE}} up -d && \
+        docker compose -f {{.REMOTE_DOCKER_COMPOSE}} exec -it registry /bin/registry garbage-collect /etc/docker/registry/config.yml && \
+        docker container prune -f && \
+        docker image prune -f
+    deps: [fix]
+    cmds:
+      - |
+        docker compose build && \
+        docker compose push && \
+        ssh pulsar "{{.REMOTE_COMMAND}}"
+      
+  publish:
+    desc: Publish to pypi
+    deps: [fix]
+    cmds:
+      - uv build && uv publish
+  
+  fix:
+    desc: Run checkers on .py files
+    cmds:
+      - |
+        uv run -- pyright && \
+        uv run -- ruff check --fix && \
+        uv run -- ruff format
+    sources:
+      - "{{.PKG_NAME}}/*.py"
+
+  st:
+    desc: Run app local
+    cmds:
+      - uv run -- streamlit run app/webapp.py
+    

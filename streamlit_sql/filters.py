@@ -105,9 +105,6 @@ class ExistingData:
         fk_pk_name = foreign_key.column.description
         stmt = select(model).distinct()
 
-        if col.table.name != foreign_key.column.table.name:
-            stmt = stmt.outerjoin(self.Model, col == foreign_key.column)
-
         stmt = self.add_default_where(stmt, model)
 
         rows = self.session.execute(stmt).scalars()
