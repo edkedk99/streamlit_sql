@@ -62,13 +62,11 @@ class CreateRow:
                     s.add(row)
                     s.commit()
                     ss.stsql_updated += 1
-                    log.info(f"Added in {self.Model.__tablename__}: {row}")
+                    log("CREATE", self.Model.__tablename__, row)
                     return True, f"Criado com sucesso {row}"
                 except Exception as e:
                     ss.stsql_updated += 1
-                    log.error(
-                        f"Error while adding in {self.Model.__tablename__}: {row}"
-                    )
+                    log("CREATE", self.Model.__tablename__, row, success=False)
                     return False, str(e)
         else:
             return None, None
@@ -139,13 +137,11 @@ class DeleteRows:
                     ss.stsql_updated += 1
                     qtty = len(self.rows_id)
                     lancs_str = ", ".join(lancs)
-                    log.info(
-                        f"Deleted from {self.Model.__tablename__} {qtty} rows: {lancs_str}"
-                    )
+                    log("DELETE", self.Model.__tablename__, lancs_str)
                     return True, f"Deletado com sucesso {qtty} registros"
                 except Exception as e:
                     ss.stsql_updated += 1
-                    log.error(f"Error while deleting from {self.Model.__tablename__}")
+                    log("DELETE", self.Model.__tablename__, "")
                     return False, str(e)
         else:
             return None, None

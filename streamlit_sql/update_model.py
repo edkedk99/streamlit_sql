@@ -1,4 +1,5 @@
 import streamlit as st
+
 from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
 from streamlit import session_state as ss
@@ -8,7 +9,7 @@ from streamlit.delta_generator import DeltaGenerator
 from streamlit_sql import many
 from streamlit_sql.filters import ExistingData
 from streamlit_sql.input_fields import InputFields
-from streamlit_sql.lib import get_pretty_name, log, set_state
+from streamlit_sql.lib import get_pretty_name, set_state, log
 
 
 class UpdateRow:
@@ -67,14 +68,12 @@ class UpdateRow:
 
                 s.add(row)
                 s.commit()
-                log.info(f"Updated in {self.Model.__tablename__}: {row}")
+                log("UPDATE", self.Model.__tablename__, row)
                 return True, f"Atualizado com sucesso {row}"
             except Exception as e:
                 updated_list = [f"{k}: {v}" for k, v in updated.items()]
                 updated_str = ", ".join(updated_list)
-                log.error(
-                    f"Error while updating in {self.Model.__tablename__}: {updated_str}"
-                )
+                log("UPDATE", self.Model.__tablename__, updated_str)
                 return False, str(e)
 
     def show(self):
