@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from datetime import date
-from typing import Any
+from typing import Any, TypeVar
 
 import pandas as pd
 import streamlit as st
@@ -12,6 +12,7 @@ from sqlalchemy.types import Enum as SQLEnum
 from streamlit.connections.sql_connection import SQLConnection
 from streamlit.delta_generator import DeltaGenerator
 
+from streamlit_sql import params
 from streamlit_sql.lib import get_pretty_name
 
 hash_funcs: dict[Any, Callable[[Any], Any]] = {
@@ -113,15 +114,25 @@ class ColFilter:
             label = get_pretty_name(colname)
             self.container.write(label)
             inicio_c, final_c = self.container.columns(2)
+
+            default_inicio, default_final = params.get_dt_param(colname)
+
+            inicio_key = f"{self.base_key}_date_filter_inicio_{label}"
             inicio = inicio_c.date_input(
                 "Inicio",
-                value=None,
-                key=f"{self.base_key}_date_filter_inicio_{label}",
+                value=default_inicio,
+                key=inicio_key,
+                args=(colname, inicio_key, "inicio"),
+                on_change=params.set_dt_param,
             )
+
+            final_key = f"{self.base_key}_date_filter_final_{label}"
             final = final_c.date_input(
                 "Final",
-                value=None,
-                key=f"{self.base_key}_date_filter_final_{label}",
+                value=default_final,
+                key=final_key,
+                args=(colname, final_key, "final"),
+                on_change=params.set_dt_param,
             )
 
             assert inicio is None or isinstance(inicio, date)
@@ -135,7 +146,9 @@ class ColFilter:
                 final_date = None
             else:
                 final_date = date(final.year, final.month, final.day)
+
             result[colname] = inicio_date, final_date
+
         return result
 
     def get_no_dt_filters(self):
@@ -146,20 +159,27 @@ class ColFilter:
             and col.type.python_type is not date
         ]
 
-        result: dict[str, str | None] = {}
+        result: dict[str, Any] = {}
         for col in cols:
             colname = col.description
             assert colname is not None
 
             existing_value = self.existing_values.get(colname)
 
+            if existing_value is None:
+                return result
+
             if existing_value is not None:
                 label = get_pretty_name(colname)
+                key = f"{self.base_key}_no_dt_filter_{label}"
+                index = params.get_no_dt_param(col, existing_value)
                 value = self.container.selectbox(
                     label,
                     options=self.existing_values[colname],
-                    index=None,
-                    key=f"{self.base_key}_no_dt_filter_{label}",
+                    index=index,
+                    key=key,
+                    args=(colname, key),
+                    on_change=params.set_no_dt_param,
                 )
                 result[colname] = value
 

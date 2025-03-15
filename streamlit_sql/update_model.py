@@ -1,5 +1,4 @@
 import streamlit as st
-
 from sqlalchemy import select
 from sqlalchemy.orm import DeclarativeBase
 from streamlit import session_state as ss
@@ -9,7 +8,7 @@ from streamlit.delta_generator import DeltaGenerator
 from streamlit_sql import many
 from streamlit_sql.filters import ExistingData
 from streamlit_sql.input_fields import InputFields
-from streamlit_sql.lib import get_pretty_name, set_state, log
+from streamlit_sql.lib import get_pretty_name, log, set_state
 
 
 class UpdateRow:
