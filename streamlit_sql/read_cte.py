@@ -169,19 +169,18 @@ class ColFilter:
             if existing_value is None:
                 return result
 
-            if existing_value is not None:
-                label = get_pretty_name(colname)
-                key = f"{self.base_key}_no_dt_filter_{label}"
-                index = params.get_no_dt_param(col, existing_value)
-                value = self.container.selectbox(
-                    label,
-                    options=self.existing_values[colname],
-                    index=index,
-                    key=key,
-                    args=(colname, key),
-                    on_change=params.set_no_dt_param,
-                )
-                result[colname] = value
+            label = get_pretty_name(colname)
+            key = f"{self.base_key}_no_dt_filter_{label}"
+            index = params.get_no_dt_param(col, existing_value)
+            value = self.container.selectbox(
+                label,
+                options=self.existing_values[colname],
+                index=index,
+                key=key,
+                args=(colname, key),
+                on_change=params.set_no_dt_param,
+            )
+            result[colname] = value
 
         return result
 
