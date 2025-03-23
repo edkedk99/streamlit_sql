@@ -113,7 +113,9 @@ class ColFilter:
             assert colname is not None
             label = get_pretty_name(colname)
             self.container.write(label)
-            inicio_c, final_c = self.container.columns(2)
+            inicio_c, final_c, btn_c = self.container.columns(
+                [0.475, 0.475, 0.05], vertical_alignment="bottom"
+            )
 
             default_inicio, default_final = params.get_dt_param(colname)
 
@@ -134,6 +136,12 @@ class ColFilter:
                 args=(colname, final_key, "final"),
                 on_change=params.set_dt_param,
             )
+
+            btn = btn_c.button("", icon=":material/cancel:")
+            if btn:
+                st.query_params.pop(f"{colname}_inicio", None)
+                st.query_params.pop(f"{colname}_final", None)
+                st.rerun()
 
             assert inicio is None or isinstance(inicio, date)
             if inicio is None:
@@ -172,7 +180,10 @@ class ColFilter:
             label = get_pretty_name(colname)
             key = f"{self.base_key}_no_dt_filter_{label}"
             index = params.get_no_dt_param(col, existing_value)
-            value = self.container.selectbox(
+            col1, col2 = self.container.columns(
+                [0.95, 0.05], vertical_alignment="bottom"
+            )
+            value = col1.selectbox(
                 label,
                 options=self.existing_values[colname],
                 index=index,
@@ -180,6 +191,11 @@ class ColFilter:
                 args=(colname, key),
                 on_change=params.set_no_dt_param,
             )
+            btn = col2.button(label="", icon=":material/cancel:", key=f"{key}_btn")
+            if btn:
+                st.query_params.pop(colname, None)
+                st.rerun()
+
             result[colname] = value
 
         return result
