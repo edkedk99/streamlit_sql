@@ -4,7 +4,12 @@
 
 Creating a CRUD interface can be a tedious and repetitive task. This package is intended to replace all of that with a few lines of code that involves simply creating a sqlalchemy statement and calling the main *SqlUi* class with only 3 required arguments. All extra and advanced features are available by supplying non-required arguments to the class initialization.
 
-When the main class is initialized, it will display the database table data with most of the expected features of a crud interface, so the user will be able to **read, filter, update, create and delete rows** with many useful features.
+When the main class is initialized, it will display the database table data with most of the expected features of a crud interface, so the user will be able to **read, filter, update, create and delete rows** with many useful features. 
+
+It also offers useful information about the data as property like:
+- df: The Dataframe displayed in the screen
+- selected_rows: The position of selected rows. This is not the row id
+- qtty_rows: The quantity of all rows after filtering
 
 ## Demo
 
@@ -19,6 +24,10 @@ See the package in action [here](https://example-crud.streamlit.app/).
 - Set the dataframe to be displayed using standard sqlalchemy select statement, where you can JOIN, ORDER BY, WHERE, etc.
 - Add a column to show the rolling sum of a numeric column
 - Conditional styling if the DataFrame based on each row value. For instance, changing its background color
+- Format the number display format.
+- Display multiple CRUD interfaces in the same page using unique base_key.
+- Show *many-to-one* relation in edit forms with basic editing.
+- Log database modification to stderr or to your prefered loguru handler. (can be disabled)
 
 ### FILTER
 

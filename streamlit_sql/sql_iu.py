@@ -47,8 +47,9 @@ class SqlUi:
             conn (SQLConnection): A sqlalchemy connection created with st.connection(\"sql\", url=\"<sqlalchemy url>\")
             read_instance (Select | CTE | Model): The sqlalchemy select statement to display or a CTE. Choose columns to display , join, query or order.If selecting columns, you need to add the id column. If a Model, it will select all columns.
             edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object
-            available_filter (list[str], optional): Define wich columns the user will be able to filter in the top exapander. Defaults to all
+            available_filter (list[str], optional): Define wich columns the user will be able to filter in the top expander. Defaults to all
             rolling_total_column (str, optional): A numeric column name of the read_instance. A new column will be displayed with the rolling sum of these column
+            rolling_orderby_colsname (list[str], optional): A list of columns name of the read_instance. It should contain a group of columns that ensures uniqueness of the rows and the order to calculate rolling sum. Usually, it should a date and id column. If not informed, rows will be sorted by id only. Defaults to None
             df_style_formatter (dict[str,str]): a dictionary where each key is a column name and the associated value is the formatter arg of df.style.format method. See pandas docs for details.
             read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False
             hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True
@@ -81,7 +82,7 @@ class SqlUi:
             stmt = (
                 select(
                     db.Invoice.id,
-                    db.Invoice.Date,
+                    db.Invoice.date,
                     db.Invoice.amount,
                     db.Client.name,
                 )
@@ -96,6 +97,7 @@ class SqlUi:
                 edit_create_model=db.Invoice,
                 available_filter=["name"],
                 rolling_total_column="amount",
+                rolling_orderby_colsname=["date", "id"],
                 df_style_formatter={"amount": "{:,.2f}"},
                 read_use_container_width=True,
                 hide_id=True,
