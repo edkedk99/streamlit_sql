@@ -589,7 +589,11 @@
 <h1 id="streamlit_sql">streamlit_sql<a class="headerlink" href="#streamlit_sql" title="Permanent link">#</a></h1>
 <h2 id="introduction">Introduction<a class="headerlink" href="#introduction" title="Permanent link">#</a></h2>
 <p>Creating a CRUD interface can be a tedious and repetitive task. This package is intended to replace all of that with a few lines of code that involves simply creating a sqlalchemy statement and calling the main <em>SqlUi</em> class with only 3 required arguments. All extra and advanced features are available by supplying non-required arguments to the class initialization.</p>
-<p>When the main class is initialized, it will display the database table data with most of the expected features of a crud interface, so the user will be able to <strong>read, filter, update, create and delete rows</strong> with many useful features.</p>
+<p>When the main class is initialized, it will display the database table data with most of the expected features of a crud interface, so the user will be able to <strong>read, filter, update, create and delete rows</strong> with many useful features. </p>
+<p>It also offers useful information about the data as property like:
+- df: The Dataframe displayed in the screen
+- selected_rows: The position of selected rows. This is not the row id
+- qtty_rows: The quantity of all rows after filtering</p>
 <h2 id="demo">Demo<a class="headerlink" href="#demo" title="Permanent link">#</a></h2>
 <p>See the package in action <a href="https://example-crud.streamlit.app/">here</a>.</p>
 <h2 id="features">Features<a class="headerlink" href="#features" title="Permanent link">#</a></h2>
@@ -600,6 +604,10 @@
 <li>Set the dataframe to be displayed using standard sqlalchemy select statement, where you can JOIN, ORDER BY, WHERE, etc.</li>
 <li>Add a column to show the rolling sum of a numeric column</li>
 <li>Conditional styling if the DataFrame based on each row value. For instance, changing its background color</li>
+<li>Format the number display format.</li>
+<li>Display multiple CRUD interfaces in the same page using unique base_key.</li>
+<li>Show <em>many-to-one</em> relation in edit forms with basic editing.</li>
+<li>Log database modification to stderr or to your prefered loguru handler. (can be disabled)</li>
 </ul>
 <h3 id="filter">FILTER<a class="headerlink" href="#filter" title="Permanent link">#</a></h3>
 <ul>

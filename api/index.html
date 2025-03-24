@@ -867,7 +867,27 @@
 <span class="normal">386</span>
 <span class="normal">387</span>
 <span class="normal">388</span>
-<span class="normal">389</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SqlUi</span><span class="p">:</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SqlUi</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Show A CRUD interface in a Streamlit Page</span>
 
 <span class="sd">    See in __init__ method detailed descriptions of arguments and properties</span>
@@ -885,6 +905,7 @@
         <span class="n">available_filter</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">edit_create_default_values</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">rolling_total_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rolling_orderby_colsname</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">df_style_formatter</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">read_use_container_width</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">hide_id</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -899,8 +920,9 @@
 <span class="sd">            conn (SQLConnection): A sqlalchemy connection created with st.connection(\&quot;sql\&quot;, url=\&quot;&lt;sqlalchemy url&gt;\&quot;)</span>
 <span class="sd">            read_instance (Select | CTE | Model): The sqlalchemy select statement to display or a CTE. Choose columns to display , join, query or order.If selecting columns, you need to add the id column. If a Model, it will select all columns.</span>
 <span class="sd">            edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object</span>
-<span class="sd">            available_filter (list[str], optional): Define wich columns the user will be able to filter in the top exapander. Defaults to all</span>
+<span class="sd">            available_filter (list[str], optional): Define wich columns the user will be able to filter in the top expander. Defaults to all</span>
 <span class="sd">            rolling_total_column (str, optional): A numeric column name of the read_instance. A new column will be displayed with the rolling sum of these column</span>
+<span class="sd">            rolling_orderby_colsname (list[str], optional): A list of columns name of the read_instance. It should contain a group of columns that ensures uniqueness of the rows and the order to calculate rolling sum. Usually, it should a date and id column. If not informed, rows will be sorted by id only. Defaults to None</span>
 <span class="sd">            df_style_formatter (dict[str,str]): a dictionary where each key is a column name and the associated value is the formatter arg of df.style.format method. See pandas docs for details.</span>
 <span class="sd">            read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False</span>
 <span class="sd">            hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True</span>
@@ -933,7 +955,7 @@
 <span class="sd">            stmt = (</span>
 <span class="sd">                select(</span>
 <span class="sd">                    db.Invoice.id,</span>
-<span class="sd">                    db.Invoice.Date,</span>
+<span class="sd">                    db.Invoice.date,</span>
 <span class="sd">                    db.Invoice.amount,</span>
 <span class="sd">                    db.Client.name,</span>
 <span class="sd">                )</span>
@@ -948,6 +970,7 @@
 <span class="sd">                edit_create_model=db.Invoice,</span>
 <span class="sd">                available_filter=[&quot;name&quot;],</span>
 <span class="sd">                rolling_total_column=&quot;amount&quot;,</span>
+<span class="sd">                rolling_orderby_colsname=[&quot;date&quot;, &quot;id&quot;],</span>
 <span class="sd">                df_style_formatter={&quot;amount&quot;: &quot;{:,.2f}&quot;},</span>
 <span class="sd">                read_use_container_width=True,</span>
 <span class="sd">                hide_id=True,</span>
@@ -966,6 +989,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">available_filter</span> <span class="o">=</span> <span class="n">available_filter</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">edit_create_default_values</span> <span class="o">=</span> <span class="n">edit_create_default_values</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rolling_total_column</span> <span class="o">=</span> <span class="n">rolling_total_column</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rolling_orderby_colsname</span> <span class="o">=</span> <span class="n">rolling_orderby_colsname</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">df_style_formatter</span> <span class="o">=</span> <span class="n">df_style_formatter</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">read_use_container_width</span> <span class="o">=</span> <span class="n">read_use_container_width</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">hide_id</span> <span class="o">=</span> <span class="n">hide_id</span>
@@ -986,10 +1010,16 @@
         <span class="c1"># Create UI</span>
         <span class="n">col_filter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">()</span>
         <span class="n">stmt_no_pag</span> <span class="o">=</span> <span class="n">read_cte</span><span class="o">.</span><span class="n">get_stmt_no_pag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cte</span><span class="p">,</span> <span class="n">col_filter</span><span class="p">)</span>
-        <span class="n">initial_balance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_initial_balance</span><span class="p">(</span><span class="n">stmt_no_pag</span><span class="p">,</span> <span class="n">col_filter</span><span class="p">)</span>
         <span class="n">qtty_rows</span> <span class="o">=</span> <span class="n">read_cte</span><span class="o">.</span><span class="n">get_qtty_rows</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="n">stmt_no_pag</span><span class="p">)</span>
         <span class="n">items_per_page</span><span class="p">,</span> <span class="n">page</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pagination</span><span class="p">(</span><span class="n">qtty_rows</span><span class="p">,</span> <span class="n">col_filter</span><span class="p">)</span>
         <span class="n">stmt_pag</span> <span class="o">=</span> <span class="n">read_cte</span><span class="o">.</span><span class="n">get_stmt_pag</span><span class="p">(</span><span class="n">stmt_no_pag</span><span class="p">,</span> <span class="n">items_per_page</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span>
+        <span class="n">initial_balance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_initial_balance</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cte</span><span class="p">,</span>
+            <span class="n">stmt_pag</span><span class="p">,</span>
+            <span class="n">col_filter</span><span class="o">.</span><span class="n">no_dt_filters</span><span class="p">,</span>
+            <span class="n">rolling_total_column</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rolling_orderby_colsname</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_df</span><span class="p">(</span><span class="n">stmt_pag</span><span class="p">,</span> <span class="n">initial_balance</span><span class="p">)</span>
         <span class="n">selection_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
         <span class="n">rows_selected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rows_selected</span><span class="p">(</span><span class="n">selection_state</span><span class="p">)</span>
@@ -1050,6 +1080,13 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">cte</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">read_instance</span><span class="p">)</span><span class="o">.</span><span class="n">cte</span><span class="p">()</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rolling_total_column</span><span class="p">:</span>
+            <span class="n">orderby_cols</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">cte</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">colname</span><span class="p">)</span> <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rolling_orderby_colsname</span>
+            <span class="p">]</span>
+            <span class="n">orderby_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">orderby_cols</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+            <span class="n">cte</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">cte</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="o">*</span><span class="n">orderby_cols</span><span class="p">)</span><span class="o">.</span><span class="n">cte</span><span class="p">()</span>
+
         <span class="k">return</span> <span class="n">cte</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -1094,12 +1131,19 @@
 
         <span class="k">return</span> <span class="n">items_per_page</span><span class="p">,</span> <span class="n">page</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_initial_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stmt_no_pag</span><span class="p">:</span> <span class="n">Select</span><span class="p">,</span> <span class="n">col_filter</span><span class="p">:</span> <span class="n">read_cte</span><span class="o">.</span><span class="n">ColFilter</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rolling_total_column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_initial_balance</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">base_cte</span><span class="p">:</span> <span class="n">CTE</span><span class="p">,</span>
+        <span class="n">stmt_pag</span><span class="p">:</span> <span class="n">Select</span><span class="p">,</span>
+        <span class="n">no_dt_filters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span>
+        <span class="n">rolling_total_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">rolling_orderby_colsname</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="p">):</span>
+        <span class="k">if</span> <span class="n">rolling_total_column</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">0</span>
 
         <span class="n">saldo_toogle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">saldo_toggle_col</span><span class="o">.</span><span class="n">toggle</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Adiciona Saldo Devedor em </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rolling_pretty_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">&quot;Adiciona Saldo Anterior em </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">rolling_pretty_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
             <span class="n">value</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">key</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">base_key</span><span class="si">}</span><span class="s2">_saldo_toggle_sql_ui&quot;</span><span class="p">,</span>
         <span class="p">)</span>
@@ -1107,23 +1151,19 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">saldo_toogle</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">0</span>
 
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">session</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
-            <span class="n">first_row</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">stmt_no_pag</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">()</span>
+        <span class="n">stmt_no_pag_dt</span> <span class="o">=</span> <span class="n">read_cte</span><span class="o">.</span><span class="n">get_stmt_no_pag_dt</span><span class="p">(</span><span class="n">base_cte</span><span class="p">,</span> <span class="n">no_dt_filters</span><span class="p">)</span>
 
-        <span class="n">first_row_id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">first_row</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">first_row</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">first_row_id</span> <span class="o">=</span> <span class="n">first_row</span><span class="o">.</span><span class="n">id</span>
-
-        <span class="n">no_dt_filters</span> <span class="o">=</span> <span class="n">col_filter</span><span class="o">.</span><span class="n">no_dt_filters</span>
-        <span class="n">stmt_no_pag_dt</span> <span class="o">=</span> <span class="n">read_cte</span><span class="o">.</span><span class="n">get_stmt_no_pag_dt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cte</span><span class="p">,</span> <span class="n">no_dt_filters</span><span class="p">)</span>
-
+        <span class="n">orderby_cols</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">base_cte</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">colname</span><span class="p">)</span> <span class="k">for</span> <span class="n">colname</span> <span class="ow">in</span> <span class="n">rolling_orderby_colsname</span>
+        <span class="p">]</span>
+        <span class="n">orderby_cols</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">orderby_cols</span> <span class="k">if</span> <span class="n">col</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="o">.</span><span class="n">session</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
             <span class="n">initial_balance</span> <span class="o">=</span> <span class="n">read_cte</span><span class="o">.</span><span class="n">initial_balance</span><span class="p">(</span>
                 <span class="n">_session</span><span class="o">=</span><span class="n">s</span><span class="p">,</span>
                 <span class="n">stmt_no_pag_dt</span><span class="o">=</span><span class="n">stmt_no_pag_dt</span><span class="p">,</span>
-                <span class="n">col_filter</span><span class="o">=</span><span class="n">col_filter</span><span class="p">,</span>
-                <span class="n">rolling_total_column</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rolling_total_column</span><span class="p">,</span>
-                <span class="n">first_row_id</span><span class="o">=</span><span class="n">first_row_id</span><span class="p">,</span>
+                <span class="n">stmt_pag</span><span class="o">=</span><span class="n">stmt_pag</span><span class="p">,</span>
+                <span class="n">rolling_total_column</span><span class="o">=</span><span class="n">rolling_total_column</span><span class="p">,</span>
+                <span class="n">orderby_cols</span><span class="o">=</span><span class="n">orderby_cols</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">saldo_value_col</span><span class="o">.</span><span class="n">subheader</span><span class="p">(</span>
@@ -1259,7 +1299,7 @@
 
 
 <h3 id="streamlit_sql.SqlUi.__init__" class="doc doc-heading">
-            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">read_instance</span><span class="p">,</span> <span class="n">edit_create_model</span><span class="p">,</span> <span class="n">available_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">edit_create_default_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rolling_total_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">df_style_formatter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">read_use_container_width</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">hide_id</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">base_key</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">style_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">update_show_many</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">disable_log</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">read_instance</span><span class="p">,</span> <span class="n">edit_create_model</span><span class="p">,</span> <span class="n">available_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">edit_create_default_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rolling_total_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rolling_orderby_colsname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">df_style_formatter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">read_use_container_width</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">hide_id</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">base_key</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">style_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">update_show_many</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">disable_log</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 <a href="#streamlit_sql.SqlUi.__init__" class="headerlink" title="Permanent link">#</a></h3>
 
@@ -1337,7 +1377,7 @@
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Define wich columns the user will be able to filter in the top exapander. Defaults to all</p>
+                <p>Define wich columns the user will be able to filter in the top expander. Defaults to all</p>
               </div>
             </td>
             <td>
@@ -1354,6 +1394,22 @@
             <td>
               <div class="doc-md-description">
                 <p>A numeric column name of the read_instance. A new column will be displayed with the rolling sum of these column</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>rolling_orderby_colsname</code>
+            </td>
+            <td>
+                  <code>list[str]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A list of columns name of the read_instance. It should contain a group of columns that ensures uniqueness of the rows and the order to calculate rolling sum. Usually, it should a date and id column. If not informed, rows will be sorted by id only. Defaults to None</p>
               </div>
             </td>
             <td>
@@ -1540,7 +1596,7 @@
 <span class="n">stmt</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">select</span><span class="p">(</span>
         <span class="n">db</span><span class="o">.</span><span class="n">Invoice</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
-        <span class="n">db</span><span class="o">.</span><span class="n">Invoice</span><span class="o">.</span><span class="n">Date</span><span class="p">,</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">Invoice</span><span class="o">.</span><span class="n">date</span><span class="p">,</span>
         <span class="n">db</span><span class="o">.</span><span class="n">Invoice</span><span class="o">.</span><span class="n">amount</span><span class="p">,</span>
         <span class="n">db</span><span class="o">.</span><span class="n">Client</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
     <span class="p">)</span>
@@ -1555,6 +1611,7 @@
     <span class="n">edit_create_model</span><span class="o">=</span><span class="n">db</span><span class="o">.</span><span class="n">Invoice</span><span class="p">,</span>
     <span class="n">available_filter</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
     <span class="n">rolling_total_column</span><span class="o">=</span><span class="s2">&quot;amount&quot;</span><span class="p">,</span>
+    <span class="n">rolling_orderby_colsname</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;date&quot;</span><span class="p">,</span> <span class="s2">&quot;id&quot;</span><span class="p">],</span>
     <span class="n">df_style_formatter</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;amount&quot;</span><span class="p">:</span> <span class="s2">&quot;</span><span class="si">{:,.2f}</span><span class="s2">&quot;</span><span class="p">},</span>
     <span class="n">read_use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">hide_id</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -1691,7 +1748,17 @@
 <span class="normal">148</span>
 <span class="normal">149</span>
 <span class="normal">150</span>
-<span class="normal">151</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">conn</span><span class="p">:</span> <span class="n">SQLConnection</span><span class="p">,</span>
     <span class="n">read_instance</span><span class="p">,</span>
@@ -1699,6 +1766,7 @@
     <span class="n">available_filter</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">edit_create_default_values</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rolling_total_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rolling_orderby_colsname</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">df_style_formatter</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">read_use_container_width</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">hide_id</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -1713,8 +1781,9 @@
 <span class="sd">        conn (SQLConnection): A sqlalchemy connection created with st.connection(\&quot;sql\&quot;, url=\&quot;&lt;sqlalchemy url&gt;\&quot;)</span>
 <span class="sd">        read_instance (Select | CTE | Model): The sqlalchemy select statement to display or a CTE. Choose columns to display , join, query or order.If selecting columns, you need to add the id column. If a Model, it will select all columns.</span>
 <span class="sd">        edit_create_default_values (dict, optional): A dict with column name as keys and values to be default. When the user clicks to create a row, those columns will not show on the form and its value will be added to the Model object</span>
-<span class="sd">        available_filter (list[str], optional): Define wich columns the user will be able to filter in the top exapander. Defaults to all</span>
+<span class="sd">        available_filter (list[str], optional): Define wich columns the user will be able to filter in the top expander. Defaults to all</span>
 <span class="sd">        rolling_total_column (str, optional): A numeric column name of the read_instance. A new column will be displayed with the rolling sum of these column</span>
+<span class="sd">        rolling_orderby_colsname (list[str], optional): A list of columns name of the read_instance. It should contain a group of columns that ensures uniqueness of the rows and the order to calculate rolling sum. Usually, it should a date and id column. If not informed, rows will be sorted by id only. Defaults to None</span>
 <span class="sd">        df_style_formatter (dict[str,str]): a dictionary where each key is a column name and the associated value is the formatter arg of df.style.format method. See pandas docs for details.</span>
 <span class="sd">        read_use_container_width (bool, optional): add use_container_width to st.dataframe args. Default to False</span>
 <span class="sd">        hide_id (bool, optional): The id column will not be displayed if set to True. Defaults to True</span>
@@ -1747,7 +1816,7 @@
 <span class="sd">        stmt = (</span>
 <span class="sd">            select(</span>
 <span class="sd">                db.Invoice.id,</span>
-<span class="sd">                db.Invoice.Date,</span>
+<span class="sd">                db.Invoice.date,</span>
 <span class="sd">                db.Invoice.amount,</span>
 <span class="sd">                db.Client.name,</span>
 <span class="sd">            )</span>
@@ -1762,6 +1831,7 @@
 <span class="sd">            edit_create_model=db.Invoice,</span>
 <span class="sd">            available_filter=[&quot;name&quot;],</span>
 <span class="sd">            rolling_total_column=&quot;amount&quot;,</span>
+<span class="sd">            rolling_orderby_colsname=[&quot;date&quot;, &quot;id&quot;],</span>
 <span class="sd">            df_style_formatter={&quot;amount&quot;: &quot;{:,.2f}&quot;},</span>
 <span class="sd">            read_use_container_width=True,</span>
 <span class="sd">            hide_id=True,</span>
@@ -1780,6 +1850,7 @@
     <span class="bp">self</span><span class="o">.</span><span class="n">available_filter</span> <span class="o">=</span> <span class="n">available_filter</span> <span class="ow">or</span> <span class="p">[]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">edit_create_default_values</span> <span class="o">=</span> <span class="n">edit_create_default_values</span> <span class="ow">or</span> <span class="p">{}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">rolling_total_column</span> <span class="o">=</span> <span class="n">rolling_total_column</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">rolling_orderby_colsname</span> <span class="o">=</span> <span class="n">rolling_orderby_colsname</span> <span class="ow">or</span> <span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">df_style_formatter</span> <span class="o">=</span> <span class="n">df_style_formatter</span> <span class="ow">or</span> <span class="p">{}</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">read_use_container_width</span> <span class="o">=</span> <span class="n">read_use_container_width</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">hide_id</span> <span class="o">=</span> <span class="n">hide_id</span>
@@ -1800,10 +1871,16 @@
     <span class="c1"># Create UI</span>
     <span class="n">col_filter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">()</span>
     <span class="n">stmt_no_pag</span> <span class="o">=</span> <span class="n">read_cte</span><span class="o">.</span><span class="n">get_stmt_no_pag</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cte</span><span class="p">,</span> <span class="n">col_filter</span><span class="p">)</span>
-    <span class="n">initial_balance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_initial_balance</span><span class="p">(</span><span class="n">stmt_no_pag</span><span class="p">,</span> <span class="n">col_filter</span><span class="p">)</span>
     <span class="n">qtty_rows</span> <span class="o">=</span> <span class="n">read_cte</span><span class="o">.</span><span class="n">get_qtty_rows</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conn</span><span class="p">,</span> <span class="n">stmt_no_pag</span><span class="p">)</span>
     <span class="n">items_per_page</span><span class="p">,</span> <span class="n">page</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pagination</span><span class="p">(</span><span class="n">qtty_rows</span><span class="p">,</span> <span class="n">col_filter</span><span class="p">)</span>
     <span class="n">stmt_pag</span> <span class="o">=</span> <span class="n">read_cte</span><span class="o">.</span><span class="n">get_stmt_pag</span><span class="p">(</span><span class="n">stmt_no_pag</span><span class="p">,</span> <span class="n">items_per_page</span><span class="p">,</span> <span class="n">page</span><span class="p">)</span>
+    <span class="n">initial_balance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_initial_balance</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cte</span><span class="p">,</span>
+        <span class="n">stmt_pag</span><span class="p">,</span>
+        <span class="n">col_filter</span><span class="o">.</span><span class="n">no_dt_filters</span><span class="p">,</span>
+        <span class="n">rolling_total_column</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rolling_orderby_colsname</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="n">df</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_df</span><span class="p">(</span><span class="n">stmt_pag</span><span class="p">,</span> <span class="n">initial_balance</span><span class="p">)</span>
     <span class="n">selection_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_df</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
     <span class="n">rows_selected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_rows_selected</span><span class="p">(</span><span class="n">selection_state</span><span class="p">)</span>
@@ -1835,7 +1912,7 @@
 
 
 <h2 id="streamlit_sql.show_sql_ui" class="doc doc-heading">
-            <code class="highlight language-python"><span class="n">show_sql_ui</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">read_instance</span><span class="p">,</span> <span class="n">edit_create_model</span><span class="p">,</span> <span class="n">available_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">edit_create_default_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rolling_total_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">df_style_formatter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">read_use_container_width</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">hide_id</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">base_key</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">style_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">update_show_many</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+            <code class="highlight language-python"><span class="n">show_sql_ui</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">read_instance</span><span class="p">,</span> <span class="n">edit_create_model</span><span class="p">,</span> <span class="n">available_filter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">edit_create_default_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rolling_total_column</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rolling_orderby_colsname</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">df_style_formatter</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">read_use_container_width</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">hide_id</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">base_key</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">style_fn</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">update_show_many</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
 <a href="#streamlit_sql.show_sql_ui" class="headerlink" title="Permanent link">#</a></h2>
 
@@ -1854,27 +1931,7 @@
 </details>
             <details class="quote">
               <summary>Source code in <code>streamlit_sql/sql_iu.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">392</span>
-<span class="normal">393</span>
-<span class="normal">394</span>
-<span class="normal">395</span>
-<span class="normal">396</span>
-<span class="normal">397</span>
-<span class="normal">398</span>
-<span class="normal">399</span>
-<span class="normal">400</span>
-<span class="normal">401</span>
-<span class="normal">402</span>
-<span class="normal">403</span>
-<span class="normal">404</span>
-<span class="normal">405</span>
-<span class="normal">406</span>
-<span class="normal">407</span>
-<span class="normal">408</span>
-<span class="normal">409</span>
-<span class="normal">410</span>
-<span class="normal">411</span>
-<span class="normal">412</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">412</span>
 <span class="normal">413</span>
 <span class="normal">414</span>
 <span class="normal">415</span>
@@ -1894,13 +1951,36 @@
 <span class="normal">429</span>
 <span class="normal">430</span>
 <span class="normal">431</span>
-<span class="normal">432</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">show_sql_ui</span><span class="p">(</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">show_sql_ui</span><span class="p">(</span>
     <span class="n">conn</span><span class="p">:</span> <span class="n">SQLConnection</span><span class="p">,</span>
     <span class="n">read_instance</span><span class="p">,</span>
     <span class="n">edit_create_model</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">DeclarativeBase</span><span class="p">],</span>
     <span class="n">available_filter</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">edit_create_default_values</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">rolling_total_column</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">rolling_orderby_colsname</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">df_style_formatter</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">read_use_container_width</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">hide_id</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -1926,6 +2006,7 @@
         <span class="n">available_filter</span><span class="o">=</span><span class="n">available_filter</span><span class="p">,</span>
         <span class="n">edit_create_default_values</span><span class="o">=</span><span class="n">edit_create_default_values</span><span class="p">,</span>
         <span class="n">rolling_total_column</span><span class="o">=</span><span class="n">rolling_total_column</span><span class="p">,</span>
+        <span class="n">rolling_orderby_colsname</span><span class="o">=</span><span class="n">rolling_orderby_colsname</span><span class="p">,</span>
         <span class="n">df_style_formatter</span><span class="o">=</span><span class="n">df_style_formatter</span><span class="p">,</span>
         <span class="n">read_use_container_width</span><span class="o">=</span><span class="n">read_use_container_width</span><span class="p">,</span>
         <span class="n">hide_id</span><span class="o">=</span><span class="n">hide_id</span><span class="p">,</span>
