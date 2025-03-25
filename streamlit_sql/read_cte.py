@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from datetime import date
-from typing import Any, TypeVar
+from typing import Any
 
 import pandas as pd
 import streamlit as st
@@ -137,7 +137,11 @@ class ColFilter:
                 on_change=params.set_dt_param,
             )
 
-            btn = btn_c.button("", icon=":material/cancel:")
+            btn = btn_c.button(
+                "",
+                icon=":material/cancel:",
+                key=f"st_sql_{inicio_key}_{final_key}_cancel_btn",
+            )
             if btn:
                 st.query_params.pop(f"{colname}_inicio", None)
                 st.query_params.pop(f"{colname}_final", None)

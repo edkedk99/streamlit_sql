@@ -1,6 +1,8 @@
 from datetime import date
+from decimal import Decimal
 
 import streamlit as st
+from sqlalchemy import Numeric
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.sql.elements import KeyedColumnElement
 from sqlalchemy.types import Enum as SQLEnum
@@ -75,6 +77,26 @@ class InputFields:
         result = str(input_value)
         return result
 
+    def input_numeric(self, col_name, scale: int | None, value=None):
+        step = None
+        if scale:
+            step = 10 ** (scale * -1)
+
+        value_float = None
+        if value:
+            value_float = float(value)
+
+        input_value = st.number_input(col_name, value=value_float, step=step)
+
+        if not input_value:
+            return None
+
+        value_dec = Decimal(str(input_value))
+        if step:
+            value_dec = value_dec.quantize(Decimal(str(step)))
+
+        return value_dec
+
     def get_input_value(self, col: KeyedColumnElement, col_value):
         col_name = col.description
         assert col_name is not None
@@ -90,6 +112,9 @@ class InputFields:
             input_value = st.number_input(pretty_name, value=col_value, step=1)
         elif col.type.python_type is float:
             input_value = st.number_input(pretty_name, value=col_value, step=0.1)
+        elif isinstance(col.type, Numeric):
+            scale = col.type.scale
+            input_value = self.input_numeric(pretty_name, scale, col_value)
         elif col.type.python_type is date:
             input_value = st.date_input(pretty_name, value=col_value)
         elif col.type.python_type is bool:
